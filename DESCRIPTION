@@ -1,0 +1,17 @@
+Package: PVAR.FiNNO
+Type: Package
+Title: Fixed-Nuclear-Norm Optimization algorithm for Panel Vector Auto-Regression
+Version: 0.1.0
+Author: Yuchen Xu
+Maintainer: Yuchen Xu <xycxu1015@gmail.com>
+Description: An ADMM approach to solve the estimation problem of Panel Vector Auto Regression with Fixed Nuclear Norm constraints.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 4.0.0), Rdpack
+Imports: MASS, stats, Matrix, foreach, doFuture, future, progressr, irlba, Rcpp
+LinkingTo: Rcpp
+RdMacros: Rdpack
+RoxygenNote: 7.3.2
+Suggests: knitr, rmarkdown, devtools
+VignetteBuilder: knitr
