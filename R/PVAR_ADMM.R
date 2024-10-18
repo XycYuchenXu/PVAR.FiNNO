@@ -56,7 +56,7 @@
 #' @examples DP = simuDP(1, M = 5, p = 10, r = 3, s = 0.02)
 #' est = PVAR_ADMM(DP$Data$XTS, 5, 0.01, maxiter = 10, miniter = 3)
 PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim(XTS)[2],
-                     C = sqrt(p * r), rho = M / 100, maxiter = 1e4, miniter = 200, err = 1e-5,
+                     C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL,
                      bulk = 1, perupdate = 1, kappa = NULL, center = F, std = T){
   tm = proc.time()[3]

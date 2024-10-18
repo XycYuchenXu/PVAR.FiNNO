@@ -12,7 +12,7 @@ PVAR_ADMM(
   M = dim(XTS)[1],
   p = dim(XTS)[2],
   C = sqrt(p * r),
-  rho = M/100,
+  rho = M/10,
   maxiter = 10000,
   miniter = 200,
   err = 1e-05,
