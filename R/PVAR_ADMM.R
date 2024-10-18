@@ -102,7 +102,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('r:%d, i:%d, G:%.4f, E:%.3f', r, i, traj[i+1], 100 * rele[i]),
+        pb(sprintf('r:%d, i:%d, G:%.4f, E:%.3f', r, i, traj[i+1], 1000 * rele[i]),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
