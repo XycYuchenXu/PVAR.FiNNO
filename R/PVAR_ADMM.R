@@ -125,7 +125,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
     pb(sprintf('r:%d, i:%d, G:%.4f, E:%.3f', r, i, traj[i+1], 100 * rele[i]),
-       amount = maxiter %/% perupdate - i %/% perupdate)
+       amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
               eta = eta, traj = traj[-1], rele = rele, C = C, rho = rho,
