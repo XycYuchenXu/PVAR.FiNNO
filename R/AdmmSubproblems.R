@@ -118,12 +118,8 @@ P_L = function(Phi, r, C){
   D = svdPhiGam$d[1:r]
   
   cum_rem_d = (cumsum(D) - C) / (1:r)
-  ll_M = max(which(D - cum_rem_d >= C / r^2))
+  rr = max(which(D - cum_rem_d >= C / r^2))
   
-  lambda = rep(0, r)
-  lambda[1:ll_M] = D[1:ll_M] - cum_rem_d[ll_M]
-  
-  rr = max(which(lambda >= 0.02 * C))
   lambda = D[1:rr] - cum_rem_d[rr]
   if (rr < r) {lambda[(rr+1):r] = 0}
   return(crossprod(t(U), lambda * t(V)))
