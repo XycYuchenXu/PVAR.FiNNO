@@ -29,7 +29,7 @@
 #' @param Gamma The initializer for the dual variable (Lagrange multiplier) \eqn{\Gamma}.
 #' @param bulk If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
-#' @param rho_p The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
+#' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
 #' @param center Logical, whether the time series data should be centered. Default is False.
 #' @param std Logical, whether the time series data should be normalized. Default is True.
 #'
@@ -58,7 +58,7 @@
 PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim(XTS)[2],
                      C = sqrt(p * r), rho = M / 100, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL,
-                     bulk = 1, perupdate = 1, rho_p = NULL, center = F, std = T){
+                     bulk = 1, perupdate = 1, kappa = NULL, center = F, std = T){
   tm = proc.time()[3]
   status = 0
   
@@ -74,7 +74,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   }
 
   if (is.null(Gamma)) Gamma = matrix(0, p, p)
-  if (is.null(rho_p)) rho_p = M/rho
+  if (is.null(kappa)) kappa = M/rho
 
   traj = Inf; rele = c()
 
@@ -84,13 +84,13 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   }
 
   if (is.null(Phi_BL)) {
-    Phi_BL = updatePhi_BL(Phi + Gamma, Phi, rho_p, r, C, p)
+    Phi_BL = updatePhi_BL(Phi + Gamma, Phi, kappa, r, C, p)
   }
 
   for (i in 1:maxiter) {
     WS = updateWS(GK, Phi, eta, TT, M, p)
 
-    Phi_BL = updatePhi_BL(Phi + Gamma, Phi_BL, rho_p, r, C, p)
+    Phi_BL = updatePhi_BL(Phi + Gamma, Phi_BL, kappa, r, C, p)
 
     Phi0 = Phi
     Phi = updatePhi(WS$W, WS$S, GK, rho, Phi_BL, Gamma, M, p)

@@ -23,7 +23,7 @@ PVAR_ADMM(
   Gamma = NULL,
   bulk = 1,
   perupdate = 1,
-  rho_p = NULL,
+  kappa = NULL,
   center = F,
   std = T
 )
@@ -65,7 +65,7 @@ PVAR_ADMM(
 
 \item{perupdate}{If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.}
 
-\item{rho_p}{The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.}
+\item{kappa}{The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.}
 
 \item{center}{Logical, whether the time series data should be centered. Default is False.}
 
