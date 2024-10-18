@@ -118,7 +118,7 @@ P_L = function(Phi, r, C){
   D = svdPhiGam$d[1:r]
   
   cum_rem_d = (cumsum(D) - C) / (1:r)
-  ll_M = max(which(cum_rem_d <= D))
+  ll_M = max(which(D - cum_rem_d >= C / r^2))
   
   lambda = rep(0, r)
   lambda[1:ll_M] = D[1:ll_M] - cum_rem_d[ll_M]
