@@ -98,7 +98,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
     Gamma = Gamma + Phi - Phi_BL
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
-    rele = c(rele, distPhi(Phi0, Phi, C))
+    rele = c(rele, distPhi(Phi0, Phi, Phi_BL, C))
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){

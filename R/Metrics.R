@@ -35,7 +35,10 @@ IC_PVAR = function(XTS, W, S, Phi, C = 1, TT = dim(XTS)[3] - 1,
 }
 
 #' @keywords internal
-distPhi = function(Phi0, Phi1, C){
-  signs = sign(rowSums(Phi0 * Phi1))
-  return(sqrt(sum((signs * Phi0 - Phi1)^2)) / C)
+distPhi = function(Phi0, Phi1, Phi_BL, C){
+  signs_01 = sign(rowSums(Phi0 * Phi1))
+  dist_01 = sqrt(sum((signs_01 * Phi0 - Phi1)^2)) / C
+  
+  dist_BL = sqrt(sum((Phi1 - Phi_BL)^2)) / C
+  return(max(dist_01, dist_BL))
 }
