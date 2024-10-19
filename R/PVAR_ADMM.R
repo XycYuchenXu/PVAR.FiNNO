@@ -102,7 +102,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('r:%d, i:%d, G:%.4f, E:%.3f', r, i, traj[i+1], 1000 * rele[i]),
+        pb(sprintf('r:%d, e:%.3f, i:%d, G:%.4f, E:%.3f', r, eta, i, traj[i+1], 1000 * rele[i]),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
@@ -124,7 +124,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! r:%d, i:%d, G:%.4f, E:%.3f', r, i, traj[i+1], 1000 * rele[i]),
+    pb(sprintf('Done! r:%d, e:%.3f i:%d, G:%.4f, E:%.3f', r, eta, i, traj[i+1], 1000 * rele[i]),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
