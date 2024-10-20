@@ -29,7 +29,7 @@ IC_PVAR = function(XTS, W, S, Phi, C = 1, TT = dim(XTS)[3] - 1,
     rss = rss + sum(res^2)# * crossprod(pres_m, res))
     dof = dof + sum(S[[m]] != 0)
   }
-  ics = c(rss, TT * M * log(rss / (TT * M)) + dof * c(2, log(TT * M), 2 * log(log(TT * M))))
+  ics = c(rss, TT * M * p * log(rss / (TT * M * p)) + dof * c(2, log(TT * M), 2 * log(log(TT * M))))
   names(ics) = c('RSS', 'AIC', 'BIC', 'HQC')
   return(ics)
 }
