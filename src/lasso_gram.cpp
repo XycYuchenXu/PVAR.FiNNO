@@ -38,7 +38,7 @@ NumericVector lasso_regression(NumericMatrix gram_matrix, NumericVector xy, doub
       
       // Update beta using the soft-thresholding rule with scaled penalties
       double scaled_penalty = lambda * penalty_factors[j];
-      beta[j] = soft_threshold(diff / gram_matrix(j, j), scaled_penalty);
+      beta[j] = soft_threshold(diff, scaled_penalty) / gram_matrix(j, j);
       
       // Update the maximum change
       double change = std::fabs(beta[j] - beta_old[j]);
