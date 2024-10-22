@@ -4,11 +4,11 @@
 using namespace Rcpp;
 
 // Soft-thresholding function with scaled penalty
-double soft_threshold(double z, double gamma) {
+double soft_threshold(double z, double gamma, double gram_jj) {
   if (z > gamma) {
-    return z - gamma;
+    return (z - gamma) / gram_jj;
   } else if (z < -gamma) {
-    return z + gamma;
+    return (z + gamma) / gram_jj;
   } else {
     return 0.0;
   }
@@ -38,7 +38,7 @@ NumericVector lasso_regression(NumericMatrix gram_matrix, NumericVector xy, doub
       
       // Update beta using the soft-thresholding rule with scaled penalties
       double scaled_penalty = lambda * penalty_factors[j];
-      beta[j] = soft_threshold(diff, scaled_penalty) / gram_matrix(j, j);
+      beta[j] = soft_threshold(diff, scaled_penalty, gram_matrix(j, j));
       
       // Update the maximum change
       double change = std::fabs(beta[j] - beta_old[j]);
