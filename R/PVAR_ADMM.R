@@ -30,7 +30,7 @@
 #' @param bulk If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
-#' @param center Logical, whether the time series data should be centered. Default is False.
+#' @param center Logical, whether the time series data should be centered. Default is True.
 #' @param std Logical, whether the time series data should be normalized. Default is True.
 #'
 #' @return A named list of estimators and some metrics:\itemize{
@@ -49,8 +49,8 @@
 #' }
 #'
 #' @import Rcpp
-#' @importFrom irlba irlba
 #' @importFrom Rdpack reprompt
+#' @importFrom stats sd
 #' @export
 #'
 #' @examples DP = simuDP(1, M = 5, p = 10, r = 3, s = 0.02)
@@ -58,18 +58,18 @@
 PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim(XTS)[2],
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, center = F, std = T){
+                     bulk = 1, perupdate = 1, kappa = NULL, center = T, std = T){
   tm = proc.time()[3]
   status = 0
   
   if (center) {
     for (m in 1:M) {
-      XTS[m,,] = XTS[m,,] - mean(XTS[m,,])
+      XTS[m,,] = XTS[m,,] - rowMeans(XTS[m,,])
     }
   }
   if (std) {
     for (m in 1:M) {
-      XTS[m,,] = XTS[m,,] * sqrt(TT) / irlba(XTS[m,,1:TT], 0, 1)$d[1]
+      XTS[m,,] = XTS[m,,] / sd(XTS[m,,])
     }
   }
 

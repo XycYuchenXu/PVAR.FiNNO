@@ -24,7 +24,7 @@ PVAR_ADMM(
   bulk = 1,
   perupdate = 1,
   kappa = NULL,
-  center = F,
+  center = T,
   std = T
 )
 }
@@ -67,7 +67,7 @@ PVAR_ADMM(
 
 \item{kappa}{The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.}
 
-\item{center}{Logical, whether the time series data should be centered. Default is False.}
+\item{center}{Logical, whether the time series data should be centered. Default is True.}
 
 \item{std}{Logical, whether the time series data should be normalized. Default is True.}
 }

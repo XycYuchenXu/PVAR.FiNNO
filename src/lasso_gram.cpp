@@ -4,6 +4,7 @@
 using namespace Rcpp;
 
 // Lasso regression function with a single penalty and scaling factors
+//' @importFrom Rcpp evalCpp
 // [[Rcpp::export]]
 NumericVector lasso_regression(NumericMatrix gram_matrix, NumericVector xy, double lambda, NumericVector penalty_factors, int max_iter = 1000, double tolerance = 1e-6) {
   int p = gram_matrix.ncol();

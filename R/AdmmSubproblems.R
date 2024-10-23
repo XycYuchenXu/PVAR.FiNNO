@@ -110,6 +110,7 @@ updatePhi = function(W, S, GK, rho, Phi_BL, Gamma, M = nrow(W), p = ncol(W)){
 }
 
 #' @keywords internal
+#' @importFrom irlba irlba
 P_L = function(Phi, r, C){
   p = nrow(Phi)
   if (r < p / 4) {svdPhiGam = irlba(Phi, nu = r, nv = r)} else {svdPhiGam = svd(Phi, nu = r, nv = r)}
