@@ -9,7 +9,7 @@ objfun = function(GK, XTS, eta, Phi_BL, Phi, W, S, Gamma, rho, M = nrow(W),
     
     Am = W[m,] * Phi + S[[m]]
     s = s + .5 * sum(crossprod(Am) * Gm) + .5 * sum(XTS[m,,2:(TT+1)]^2) / TT -
-      sum(Am * Km) + eta * sum(abs(S[[m]]))
+      sum(t(Am) * Km) + eta * sum(abs(S[[m]]))
   }
   return(s)
   
