@@ -27,7 +27,7 @@ initPhi = function(GK, C, M = dim(GK$G)[1], p = dim(GK$G)[2]){
 }
 
 #' @keywords internal
-updateWSm = function(Gm, Km, Phi, eta, TT, p = nrow(Phi)){
+updateWSm = function(Gm, Km, Phi, Wm, Sm, eta, p = nrow(Phi)){
   wsm = matrix(0, p, p+1)
   gram_mat = matrix(0, p+1, p+1)
   gram_mat[2:(p+1), 2:(p+1)] = Gm
@@ -38,16 +38,21 @@ updateWSm = function(Gm, Km, Phi, eta, TT, p = nrow(Phi)){
     gram_mat[1,1] = crossprod(Phi[i,], gram_mat[1, 2:(p+1)])
     
     Ki = c(crossprod(Phi[i,], Km[,i]), Km[,i])
-    wsm[i,] = lasso_regression(gram_mat, Ki, lambda = eta, penalty_factors = c(0, rep(1, p)))
+    beta = c(Wm[i], Sm[i,])
+    wsm[i,] = lasso_regression(gram_mat, Ki, beta, lambda = eta, penalty_factors = c(0, rep(1, p)))
   }
   return(wsm)
 }
 
 #' @keywords internal
-updateWS = function(GK, Phi, eta, TT, M = dim(GK[[1]])[1], p = nrow(Phi)){
-  W = matrix(0, M, p); S = vector('list', M)
+updateWS = function(GK, Phi, eta, M = dim(GK[[1]])[1], p = nrow(Phi), WS = NULL){
+  if (is.null(WS)) {
+    W = matrix(0, M, p); S = rep(list(matrix(0, p, p)), M)
+  } else {
+    W = WS$W; S = WS$S
+  }
   for (m in 1:M) {
-    wsm = updateWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, eta, TT, p)
+    wsm = updateWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, W[m,], S[[m]], eta, p)
     W[m,] = wsm[,1]
     S[[m]] = wsm[,-1]
   }
@@ -55,7 +60,7 @@ updateWS = function(GK, Phi, eta, TT, M = dim(GK[[1]])[1], p = nrow(Phi)){
 }
 
 #' @keywords internal
-refineWSm = function(Gm, Km, Phi, Sm, TT, p = nrow(Phi)){
+refineWSm = function(Gm, Km, Phi, Sm, p = nrow(Phi)){
   wsm = matrix(0, p, p+1)
   
   for (i in 1:p) {
@@ -81,10 +86,10 @@ refineWSm = function(Gm, Km, Phi, Sm, TT, p = nrow(Phi)){
 }
 
 #' @keywords internal
-refineWS = function(GK, Phi, S, TT, M = dim(GK[[1]])[1], p = nrow(Phi)){
+refineWS = function(GK, Phi, S, M = dim(GK[[1]])[1], p = nrow(Phi)){
   W = matrix(0, M, p)
   for (m in 1:M) {
-    wsm = refineWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, S[[m]], TT, p)
+    wsm = refineWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, S[[m]], p)
     W[m,] = wsm[,1]
     S[[m]] = wsm[,-1]
   }

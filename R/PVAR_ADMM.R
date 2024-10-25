@@ -86,9 +86,10 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   if (is.null(Phi_BL)) {
     Phi_BL = updatePhi_BL(Phi + Gamma, Phi, kappa, r, C, p)
   }
-
+  
+  WS = NULL
   for (i in 1:maxiter) {
-    WS = updateWS(GK, Phi, eta, TT, M, p)
+    WS = updateWS(GK, Phi, eta, M, p, WS)
 
     Phi_BL = updatePhi_BL(Phi + Gamma, Phi_BL, kappa, r, C, p)
 
@@ -120,7 +121,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = dim(XTS)[3] - 1, M = dim(XTS)[1], p = dim
   }
   # W = WS$W
   # S = refineS(GK, WS$S, W, Phi, M, p)
-  WS = refineWS(GK, Phi, WS$S, TT, M, p)
+  WS = refineWS(GK, Phi, WS$S, M, p)
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
