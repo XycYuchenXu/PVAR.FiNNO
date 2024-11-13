@@ -8,9 +8,9 @@ PVAR_ADMM(
   XTS,
   r,
   eta,
-  TT = dim(XTS)[3] - 1,
-  M = dim(XTS)[1],
-  p = dim(XTS)[2],
+  TT = sapply(XTS, ncol) - 1,
+  M = length(XTS),
+  p = nrow(XTS[[1]]),
   C = sqrt(p * r),
   rho = M/10,
   maxiter = 10000,
@@ -29,13 +29,13 @@ PVAR_ADMM(
 )
 }
 \arguments{
-\item{XTS}{An array of dimension \code{M} x \code{p} x \code{(TT+1)}, the collection of Panel time series data.}
+\item{XTS}{A length-\code{M} list of time series, where the \code{m}-th data matrix has size \code{p} x \code{(TT_m + 1)} with potentially unbalanced number of observations \code{TT_m} from \code{TT}.}
 
 \item{r}{The upper bound for the rank of the estimated low-rank component.}
 
 \item{eta}{The penalty coefficient for the sparse component.}
 
-\item{TT}{The effective length of the time series, i.e., the notation \eqn{T} in description above.}
+\item{TT}{The effective lengths of the time series, i.e., the notations \eqn{T_m} in description above.}
 
 \item{M}{The number of subjects in the panel.}
 
@@ -94,8 +94,8 @@ with the coefficient matrices \eqn{A_m} have the structure
 \deqn{A_m = W_m \Phi + S_m,}
 where \eqn{W_m} are diagonal matrices, \eqn{S_m} are sparse matrices, and \eqn{\Phi}
 is the low-rank basis shared by the whole panel. The optimization problem is constructed under the ADMM framework, with the objective function
-\deqn{G(W, S, \Phi, \Phi_c, \Gamma; \eta, \rho) = \sum_{m=1}^M (\frac{1}{2T} \|Y_m - (W_m \Phi + S_m) X_m\|_F^2 + \eta \|S_m\|_1)\\ + \rho \|\Phi - \Phi_c\|_F^2 + \rho \langle \Gamma, \Phi - \Phi_c \rangle}
-subject to fixed nuclear-norm constraint \eqn{\|\Phi_c\|_* = \ell} and row-balanced constraint \eqn{\|e_i' \Phi_c\| = \|e_j' \Phi_c\|} for any \eqn{i \ne j}. Note here \eqn{Y_m = (X_1^m, \dots, X_T^m)} and \eqn{X_m = (X_0^m, \dots, X_{T-1}^m)} are stacked time series data of dimension \eqn{p \times T}.
+\deqn{G(W, S, \Phi, \Phi_c, \Gamma; \eta, \rho) = \sum_{m=1}^M (\frac{1}{2T_m} \|Y_m - (W_m \Phi + S_m) X_m\|_F^2 + \eta \|S_m\|_1)\\ + \rho \|\Phi - \Phi_c\|_F^2 + \rho \langle \Gamma, \Phi - \Phi_c \rangle}
+subject to fixed nuclear-norm constraint \eqn{\|\Phi_c\|_* = \ell} and row-balanced constraint \eqn{\|e_i' \Phi_c\| = \|e_j' \Phi_c\|} for any \eqn{i \ne j}. Note here \eqn{Y_m = (X_1^m, \dots, X_T^m)} and \eqn{X_m = (X_0^m, \dots, X_{T-1}^m)} are stacked time series data of dimension \eqn{p \times T_m}.
 }
 \details{
 While constructing the objective function, note that \eqn{\Phi} is set to be flexible, and all the low-rank constraints are imposed through specifying the support domain of the augmented variable \eqn{\Phi_c}. It may be shown that the optimization within the fixed nuclear norm space can automatically induce sparsity in the singular values, as a simplex vertex of the support domain is likely to be hit. For more details, see (CITE).

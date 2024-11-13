@@ -14,9 +14,10 @@ simuDP(
   s = NULL,
   C = 1,
   G = NULL,
-  outlier = 0,
+  isolate = 0,
   sg_w = 0,
   sg_s = 0,
+  G.sd = 0,
   seed = NULL,
   prl = NULL
 )
@@ -24,7 +25,7 @@ simuDP(
 \arguments{
 \item{N}{Number of replicates of simulated time series per setting.}
 
-\item{TT}{The length of time series, default \code{TT = p * r * 2}.}
+\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers.}
 
 \item{Pars}{The PVAR parameters generated from \code{simuPar}.}
 
@@ -40,11 +41,13 @@ simuDP(
 
 \item{G}{Number of groups in the panel.}
 
-\item{outlier}{Integer or fraction, the size of isolates in the panel model.}
+\item{isolate}{Integer or fraction, the size of isolates in the panel model.}
 
 \item{sg_w}{Integer or fraction (\code{sg_w = round(sg_w * M)}), the size of entities with singular W (i.e., purely sparse entities) in the panel.}
 
 \item{sg_s}{Integer or fraction (\code{sg_s = round(sg_s * M)}), the size of entities with singular S (i.e., purely low-rank entities) in the panel.}
+
+\item{G.sd}{The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.}
 
 \item{seed}{Random seed.}
 
@@ -53,7 +56,7 @@ simuDP(
 \value{
 A named list of PVAR parameters and data. In particular denote \code{nM = length(M)}, \code{np = length(p)}, \code{nr = length(r)} and \code{ns = length(s)}, then\itemize{
 \item \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
-\item \code{XTS}: \code{M} x \code{p} x \code{(TT + 1)} panel time series.
+\item \code{XTS}: A length-\code{M} list of time series, with the \code{m}-th data matrix having size \code{p} x \code{(TT_m + 1)}.
 \item \code{ind}: The index of the replicate in the simulation, ranging from 1 to \code{N}.
 \item \code{M, p, r, s, TT}: the same as the input, for bookkeeping purpose.
 }

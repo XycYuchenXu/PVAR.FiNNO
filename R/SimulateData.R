@@ -10,9 +10,10 @@
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
 #' @param C The specified nuclear norm.
 #' @param G Number of groups in the panel.
-#' @param outlier Integer or fraction (\code{outlier = round(outlier * M)}), the size of isolates in the panel model.
-#' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the size of subjects with singular W (i.e., purely sparse entities) in the panel.
-#' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the size of subjects with singular S (i.e., purely low-rank entities) in the panel.
+#' @param isolate Integer or fraction (\code{isolate = round(isolate * M)}), the number of isolates in the panel model.
+#' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
+#' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
+#' @param G.sd The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.
 #'
 #' @return A named list:\itemize{
 #' \item \code{Coef}: A named list of coefficients:\itemize{
@@ -36,7 +37,7 @@
 #' @export
 #'
 #' @examples data = simuPar(5, 10, 3, 0.02)
-simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0){
+simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0){
   L = matrix(rnorm(p * p), nrow = p)
   L = expm(L - t(L))[,1:r]
   R = matrix(rnorm(p * p), nrow = p)
@@ -72,12 +73,12 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0)
     if (sg_s > M - sg_w) {sg_s = 0; cat('Invalid sg_w parameter.')}
     if (sg_s > 0) {grs = c(sg_s, grs); lab = c('s', lab)}
   }
-  outlier = max(0, outlier)
-  if (outlier > 0) {
-    if (outlier < 1 && outlier > 0) {outlier = M * outlier}
-    outlier = round(outlier)
-    if (outlier > M - sg_w - sg_s) {outlier = 0; cat('Invalid outlier parameter.')}
-    if (outlier > 0) {grs = c(rep(1, outlier), grs); lab = c(rep('o', outlier), lab)}
+  isolate = max(0, isolate)
+  if (isolate > 0) {
+    if (isolate < 1 && isolate > 0) {isolate = M * isolate}
+    isolate = round(isolate)
+    if (isolate > M - sg_w - sg_s) {isolate = 0; cat('Invalid isolate parameter.')}
+    if (isolate > 0) {grs = c(rep(1, isolate), grs); lab = c(rep('o', isolate), lab)}
   }
   M_cur = M - sum(grs)
   if (!is.null(G)) {
@@ -99,28 +100,32 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0)
 
 
     wg = runif(p, 1/2, 1)
+    sd.wg = G.sd * sqrt(sum(wg^2))
     if (G < M) {wg = wg * sample(c(-1, 1), size_K, replace = TRUE)[K]}
 
     for (m in (cur+1):(cur+gr)) {
+      
       if (lab[g] != 's') {
         sm = rsparsematrix(p, p, nnz = min(rpois(1,s*p*p), 2*s*p*p)) * maxPhi_p
       } else {
         sm = matrix(0, p, p)
       }
+      
       if (lab[g] == 'w') {
         Am[m,,] = as.matrix(sm)
         Sm[[m]] = sm
       } else {
-        Am[m,,] = as.matrix(Phi + sm) * wg
-        Sm[[m]] = sm * wg
+        Wm[m,] = wg
+        if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg)}
+        Am[m,,] = as.matrix(Phi + sm) * Wm[m,]
+        Sm[[m]] = sm * Wm[m,]
       }
       omega = min(omega, 1 / max(abs(eigen(Am[m,,])$values)))
     }
 
     rescale = runif(1, min = omega/2, omega)# * ifelse(lab[g] == 's', 1/5, 1)
-    wg = wg * ifelse(lab[g] == 'w', 0, rescale)
     for (m in (cur+1):(cur+gr)) {
-      Wm[m,] = wg
+      Wm[m,] = Wm[m,] * ifelse(lab[g] == 'w', 0, rescale)
       Sm[[m]] = Sm[[m]] * rescale
       Am[m,,] = Am[m,,] * rescale
     }
@@ -135,7 +140,7 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0)
 #' One can either input all the coefficients \code{(M, p, r, s)} to start from sampling the coefficient matrices, or it also supports inputting sampled coefficient matrices from \code{simuPar} for only time series simulation. In addition, if the input parameters \code{(M, p, r, s)} are of the vector format, then every combination of the setup is simulated.
 #'
 #' @param N Number of replicates of simulated time series per setting.
-#' @param TT The length of time series, default \code{TT = p * r * 2}.
+#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers.
 #' @param Pars The PVAR parameters generated from \code{simuPar}.
 #' @param M Size of the panel, i.e., number of entities; can be a vector.
 #' @param p Dimension of the PVAR, i.e., number of variables; can be a vector.
@@ -143,15 +148,16 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0)
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices; can be a vector
 #' @param C The specified nuclear norm.
 #' @param G Number of groups in the panel.
-#' @param outlier Integer or fraction, the size of isolates in the panel model.
-#' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the size of entities with singular W (i.e., purely sparse entities) in the panel.
-#' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the size of entities with singular S (i.e., purely low-rank entities) in the panel.
+#' @param isolate Integer or fraction, the number of isolates in the panel model.
+#' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
+#' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
+#' @param G.sd The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.
 #' @param seed Random seed.
 #' @param prl If \code{is.numeric(prl)} and \code{prl >= 1}, then its rounded integer is treated as the number of cores for parallel simulation. By default \code{prl = NULL} and simulations are generated sequentially.
 #'
 #' @return A named list of PVAR parameters and data. In particular denote \code{nM = length(M)}, \code{np = length(p)}, \code{nr = length(r)} and \code{ns = length(s)}, then\itemize{
 #' \item \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
-#' \item \code{XTS}: \code{M} x \code{p} x \code{(TT + 1)} panel time series.
+#' \item \code{XTS}: A length-\code{M} list of time series, with the \code{m}-th data matrix having size \code{p} x \code{(TT_m + 1)}.
 #' \item \code{ind}: The index of the replicate in the simulation, ranging from 1 to \code{N}.
 #' \item \code{M, p, r, s, TT}: the same as the input, for bookkeeping purpose.
 #' }
@@ -167,7 +173,7 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, outlier = 0, sg_w = 0, sg_s = 0)
 #'
 #' @examples simuDP(1, M = 5, p = 10, r = 3, s = 0.02, prl = 2)
 simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = NULL, C = 1,
-                  G = NULL, outlier = 0, sg_w = 0, sg_s = 0, seed = NULL, prl = NULL){
+                  G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0, seed = NULL, prl = NULL){
   if (!is.null(seed)) {set.seed(seed)}
   if (is.null(Pars)) {
     size_par = c(length(M), length(p), length(r), length(s))
@@ -175,7 +181,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     Pars = foreach(M.i = M, p.i = p, r.i = r, s.i = s) %do%
       {
         simuPar(M.i, p.i, r.i, s.i, C = C, G = G,
-                outlier = outlier, sg_w = sg_w, sg_s = sg_s)
+                isolate = isolate, sg_w = sg_w, sg_s = sg_s, G.sd = G.sd)
       }
     dim(Pars) = size_par
   }
@@ -191,8 +197,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     Data <<- foreach(Par = Pars, .inorder = TRUE, .combine = list, .multicombine = TRUE) %:%
       foreach(n = 1:N, .combine = c, .inorder = FALSE, .options.future = list(scheduling = FALSE)) %dopar% {
         M = Par$M; p = Par$p; r = Par$r; s = Par$s
-        if (is.null(TT)) {TT = p * r * 2}
-        result = list(sampleData(TT, Par$Coef, n, M, p, r, s)); pb()
+        result = list(sampleData(Par$Coef, n, M, p, r, s, TT)); pb()
         return(result)
       }
 
@@ -202,8 +207,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     Data = foreach(Par = Pars, .inorder = TRUE, .combine = list, .multicombine = TRUE) %:%
       foreach(n = 1:N, .combine = c, .inorder = FALSE) %do% {
         M = Par$M; p = Par$p; r = Par$r; s = Par$s
-        if (is.null(TT)) {TT = p * r * 2}
-        return(list(sampleData(TT, Par$Coef, n, M, p, r, s)))
+        return(list(sampleData(Par$Coef, n, M, p, r, s, TT)))
       }
   }
   if (length(Pars) > 1) {dim(Data) = size_par}
@@ -212,18 +216,38 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
   return(list(Data = Data, Pars = Pars))
 }
 
-#' @keywords internal
-sampleData = function(TT, Coef, n, M, p, r, s){
-  XTS = array(0, dim = c(M, p, TT+1))
+#' Simulate PVAR time series data
+#'
+#' @param Coef The PVAR coefficients, the first element of the output list generated from \code{simuPar}.
+#' @param n The index of the replicate of the simulated time series.
+#' @param M Size of the panel, i.e., number of entities.
+#' @param p Dimension of the PVAR, i.e., number of variables.
+#' @param r Rank of the low-rank component.
+#' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
+#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.
+#'
+#' @return \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
+#' \item \code{XTS}: A length-\code{M} list of time series, with the \code{m}-th data matrix having size \code{p} x \code{(TT_m + 1)}.
+#' \item \code{ind}: The index of the replicate in the simulation, ranging from 1 to \code{N}.
+#' \item \code{M, p, r, s, TT}: the same as the input, for bookkeeping purpose.
+#' }
+#' @export
+#' 
+#' @examples sampleData(simuPar(5, 10, 3, 0.02)$Coef, 1, 5, 10, 3, 0.02)
+sampleData = function(Coef, n, M, p, r, s, TT = NULL){
+  XTS = vector('list', length = M)
+  if (is.null(TT)) {TT = rep(p*r*2, M)}
+  else if (length(TT) != M) {TT = rep(TT[1], M)}
   for (m in 1:M) {
     Zm = Coef$Sigma[m]
+    Xm = matrix(0, p, TT[m] + 1)
     x0 = rnorm(p)
-    Xm = matrix(0, p, TT+1)
     Atemp = Coef$A[m,,]
-    for (t in 1:(TT+1)) {
+    for (t in 1:(TT[m]+1)) {
       x0 = tcrossprod(Atemp, t(x0)) + Zm * rnorm(p, sd = 1)
-      XTS[m,,t] = x0
+      Xm[,t] = x0
     }
+    XTS[[m]] = Xm
   }
   return(list(XTS = XTS, M = M, p = p, r = r, s = s, TT = TT, ind = n))
 }

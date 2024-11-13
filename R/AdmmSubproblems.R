@@ -1,11 +1,11 @@
 #' @keywords internal
-compGK = function(XTS, M = dim(XTS)[1], p = dim(XTS)[2], TT = dim(XTS)[3] - 1){
+compGK = function(XTS, M = length(XTS), p = nrow(XTS[[1]]), TT = sapply(XTS, ncol) - 1){
   G = array(0, dim = c(M, p, p)); K = array(0, dim = c(M, p, p))
   # G = vector('list', M)
   # K = vector('list', M)
   for (m in 1:M) {
-    G[m,,] = tcrossprod(XTS[m,,1:TT]) / TT
-    K[m,,] = tcrossprod(XTS[m,,1:TT], XTS[m,,2:(TT+1)]) / TT
+    G[m,,] = tcrossprod(XTS[[m]][,1:TT[m]]) / TT[m]
+    K[m,,] = tcrossprod(XTS[[m]][,1:TT[m]], XTS[[m]][,2:(TT[m]+1)]) / TT[m]
   }
   return(list(G, K))
 }
