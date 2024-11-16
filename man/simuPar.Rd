@@ -19,11 +19,11 @@ simuPar(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0)
 
 \item{G}{Number of groups in the panel.}
 
-\item{isolate}{Integer or fraction (\code{isolate = round(isolate * M)}), the size of isolates in the panel model.}
+\item{isolate}{Integer or fraction (\code{isolate = round(isolate * M)}), the number of isolates in the panel model.}
 
-\item{sg_w}{Integer or fraction (\code{sg_w = round(sg_w * M)}), the size of subjects with singular W (i.e., purely sparse entities) in the panel.}
+\item{sg_w}{Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.}
 
-\item{sg_s}{Integer or fraction (\code{sg_s = round(sg_s * M)}), the size of subjects with singular S (i.e., purely low-rank entities) in the panel.}
+\item{sg_s}{Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.}
 
 \item{G.sd}{The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.}
 }

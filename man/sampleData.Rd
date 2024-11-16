@@ -19,7 +19,7 @@ sampleData(Coef, n, M, p, r, s, TT = NULL)
 
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices.}
 
-\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers.}
+\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.}
 }
 \value{
 \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
