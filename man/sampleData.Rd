@@ -4,12 +4,18 @@
 \alias{sampleData}
 \title{Simulate PVAR time series data}
 \usage{
-sampleData(Coef, n, M, p, r, s, TT = NULL)
+sampleData(
+  Coef,
+  M = dim(Coef$A)[1],
+  p = dim(Coef$A)[2],
+  r = NULL,
+  s = NULL,
+  TT = NULL,
+  n = 1
+)
 }
 \arguments{
 \item{Coef}{The PVAR coefficients, the first element of the output list generated from \code{simuPar}.}
-
-\item{n}{The index of the replicate of the simulated time series.}
 
 \item{M}{Size of the panel, i.e., number of entities.}
 
@@ -20,6 +26,8 @@ sampleData(Coef, n, M, p, r, s, TT = NULL)
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices.}
 
 \item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.}
+
+\item{n}{The index of the replicate of the simulated time series.}
 }
 \value{
 \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
@@ -32,5 +40,5 @@ sampleData(Coef, n, M, p, r, s, TT = NULL)
 Simulate PVAR time series data
 }
 \examples{
-sampleData(simuPar(5, 10, 3, 0.02)$Coef, 1, 5, 10, 3, 0.02)
+sampleData(simuPar(5, 10, 3, 0.02)$Coef, 5, 10, 3, 0.02)
 }

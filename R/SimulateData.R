@@ -197,7 +197,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     Data <<- foreach(Par = Pars, .inorder = TRUE, .combine = list, .multicombine = TRUE) %:%
       foreach(n = 1:N, .combine = c, .inorder = FALSE, .options.future = list(scheduling = FALSE)) %dopar% {
         M = Par$M; p = Par$p; r = Par$r; s = Par$s
-        result = list(sampleData(Par$Coef, n, M, p, r, s, TT)); pb()
+        result = list(sampleData(Par$Coef, M, p, r, s, TT, n)); pb()
         return(result)
       }
 
@@ -207,7 +207,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     Data = foreach(Par = Pars, .inorder = TRUE, .combine = list, .multicombine = TRUE) %:%
       foreach(n = 1:N, .combine = c, .inorder = FALSE) %do% {
         M = Par$M; p = Par$p; r = Par$r; s = Par$s
-        return(list(sampleData(Par$Coef, n, M, p, r, s, TT)))
+        return(list(sampleData(Par$Coef, M, p, r, s, TT, n)))
       }
   }
   if (length(Pars) > 1) {dim(Data) = size_par}
@@ -219,12 +219,12 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
 #' Simulate PVAR time series data
 #'
 #' @param Coef The PVAR coefficients, the first element of the output list generated from \code{simuPar}.
-#' @param n The index of the replicate of the simulated time series.
 #' @param M Size of the panel, i.e., number of entities.
 #' @param p Dimension of the PVAR, i.e., number of variables.
 #' @param r Rank of the low-rank component.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
 #' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.
+#' @param n The index of the replicate of the simulated time series.
 #'
 #' @return \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
 #' \item \code{XTS}: A length-\code{M} list of time series, with the \code{m}-th data matrix having size \code{p} x \code{(TT_m + 1)}.
@@ -233,8 +233,8 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
 #' }
 #' @export
 #' 
-#' @examples sampleData(simuPar(5, 10, 3, 0.02)$Coef, 1, 5, 10, 3, 0.02)
-sampleData = function(Coef, n, M, p, r, s, TT = NULL){
+#' @examples sampleData(simuPar(5, 10, 3, 0.02)$Coef, 5, 10, 3, 0.02)
+sampleData = function(Coef, M = dim(Coef$A)[1], p = dim(Coef$A)[2], r = NULL, s = NULL, TT = NULL, n = 1){
   XTS = vector('list', length = M)
   if (is.null(TT)) {TT = rep(p*r*2, M)}
   else if (length(TT) != M) {TT = rep(TT[1], M)}
