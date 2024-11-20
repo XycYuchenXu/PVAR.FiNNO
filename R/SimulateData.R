@@ -44,8 +44,9 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0,
   R = expm(R - t(R))[,1:r]
 
   Lambda = exp(runif(r))
-  Lambda = C * Lambda / sum(Lambda)
   Phi = as.matrix(crossprod(t(L), t(R) * Lambda))
+  Phi = Phi / sqrt(rowSums(Phi^2))
+  Phi = C * Phi / sum(svd(Phi)$d)
 
   maxPhi_p = max(Phi) * sqrt(p)
 
