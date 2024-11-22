@@ -8,12 +8,15 @@
 #' @param p Dimension of the PVAR, i.e., number of variables.
 #' @param r Rank of the low-rank component.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
-#' @param C The specified nuclear norm.
-#' @param G Number of groups in the panel.
-#' @param isolate Integer or fraction (\code{isolate = round(isolate * M)}), the number of isolates in the panel model.
+#' @param C The specified nuclear norm. Default is \code{C = sqrt(p * r).}
+#' @param G.W Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.
+#' @param G.S Sparse group assignment in the panel, excluding \code{sg_s} singular ones. Default is \code{G.S = 1:(M - sg_s)}.
+#' @param isolate Integer or fraction (\code{isolate = round(isolate * M)}), the number of rescaling isolates in the panel model.
 #' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
 #' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
-#' @param G.sd The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.
+#' @param GW.sd The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.
+#' @param GS.sd The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.
+#' @param GS.frac The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.
 #'
 #' @return A named list:\itemize{
 #' \item \code{Coef}: A named list of coefficients:\itemize{
@@ -37,7 +40,8 @@
 #' @export
 #'
 #' @examples data = simuPar(5, 10, 3, 0.02)
-simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0){
+simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate = 0,
+                   sg_w = 0, sg_s = 0, GW.sd = 0, GS.sd = 0, GS.frac = 0){
   L = matrix(rnorm(p * p), nrow = p)
   L = expm(L - t(L))[,1:r]
   R = matrix(rnorm(p * p), nrow = p)
@@ -60,19 +64,19 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0,
 
   grs = c()
   lab = c()
-  sg_w = max(0, sg_w)
-  if (sg_w > 0) {
-    if (sg_w < 1 && sg_w > 0) {sg_w = M * sg_w}
-    sg_w = round(sg_w)
-    if (sg_w > M) {sg_w = 0; cat('Invalid sg_w parameter.')}
-    if (sg_w > 0) {grs = c(sg_w, grs); lab = c('w', lab)}
-  }
   sg_s = max(0, sg_s)
   if (sg_s > 0) {
     if (sg_s < 1 && sg_s > 0) {sg_s = M * sg_s}
     sg_s = round(sg_s)
-    if (sg_s > M - sg_w) {sg_s = 0; cat('Invalid sg_w parameter.')}
+    if (sg_s > M) {sg_s = 0; cat('Invalid sg_w parameter.')}
     if (sg_s > 0) {grs = c(sg_s, grs); lab = c('s', lab)}
+  }
+  sg_w = max(0, sg_w)
+  if (sg_w > 0) {
+    if (sg_w < 1 && sg_w > 0) {sg_w = M * sg_w}
+    sg_w = round(sg_w)
+    if (sg_w > M - sg_s) {sg_w = 0; cat('Invalid sg_w parameter.')}
+    if (sg_w > 0) {grs = c(sg_w, grs); lab = c('w', lab)}
   }
   isolate = max(0, isolate)
   if (isolate > 0) {
@@ -82,53 +86,61 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0,
     if (isolate > 0) {grs = c(rep(1, isolate), grs); lab = c(rep('o', isolate), lab)}
   }
   M_cur = M - sum(grs)
-  if (!is.null(G)) {
-    grs = c(rep(M_cur %/% G, G) + c(rep(1, M_cur %% G), rep(0, G - M_cur %% G)), grs)
-    lab = c(paste('c', 1:G, sep = ''), lab)
+  if (!is.null(G.W)) {
+    grs = c(rep(M_cur %/% G.W, G.W) + c(rep(1, M_cur %% G.W), rep(0, G.W - M_cur %% G.W)), grs)
+    lab = c(paste('c', 1:G.W, sep = ''), lab)
   } else {
     grs = c(rep(1, M_cur), grs)
     lab = c(paste('c', 1:M_cur, sep = ''), lab)
   }
-  G = length(grs)
-
-  size_K = max(round(log2(G)), sample(G, 1))
-  K = sample(size_K, p, replace = TRUE)
-
+  G.W = length(grs)
+  
+  if (is.null(G.S)) {G.S = 1:(M - sg_s)} else {G.S = as.integer(factor(G.S))}
+  Sms = vector('list', length = length(unique(G.S))); sd.ws = rep(0, length(Sms))
+  for (ss in 1:length(Sms)) {
+    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p*p), 2*s*p*p)))
+    dsm = which(abs(diag(sm)) >= .8)
+    if (length(dsm) > 0) {diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5)}
+    Sms[[ss]] = sm
+    sd.ws[ss] = sqrt(mean(sm@x^2))
+  }
+  
   cur = 0
-  for (g in 1:G) {
+  for (g in 1:G.W) {
     gr = grs[g]
-    omega = Inf
-
-
-    wg = runif(p, 1/2, 1)
-    sd.wg = G.sd * sqrt(sum(wg^2))
-    if (G < M) {wg = wg * sample(c(-1, 1), size_K, replace = TRUE)[K]}
 
     for (m in (cur+1):(cur+gr)) {
-      
       if (lab[g] != 's') {
-        sm = rsparsematrix(p, p, nnz = min(rpois(1,s*p*p), 2*s*p*p)) * maxPhi_p
+        sm = Sms[[G.S[m]]]
+        sm@x = sm@x + rnorm(length(sm@i), sd = sd.ws[G.S[m]] * GS.sd)
+        sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]] * GS.sd
       } else {
         sm = matrix(0, p, p)
       }
       
-      if (lab[g] == 'w') {
-        Am[m,,] = as.matrix(sm)
-        Sm[[m]] = sm
-      } else {
-        Wm[m,] = wg
-        if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg)}
-        Am[m,,] = as.matrix(Phi + sm) * Wm[m,]
-        Sm[[m]] = sm * Wm[m,]
-      }
-      omega = min(omega, 1 / max(abs(eigen(Am[m,,])$values)))
+      if (lab[g] == 'w') {Am[m,,] = as.matrix(sm)}
+      Sm[[m]] = sm
     }
-
-    rescale = runif(1, min = omega/2, omega)# * ifelse(lab[g] == 's', 1/5, 1)
-    for (m in (cur+1):(cur+gr)) {
-      Wm[m,] = Wm[m,] * ifelse(lab[g] == 'w', 0, rescale)
-      Sm[[m]] = Sm[[m]] * rescale
-      Am[m,,] = Am[m,,] * rescale
+    
+    if (lab[g] != 'w') {
+      wg = runif(p, 1/2, 1)
+      sd.wg = GW.sd * sqrt(mean(wg^2))
+      if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
+      scales = c(2, 1.5, 1.1, 1, 0.9, 0.75, 0.5, 0.25)
+      for (scale in scales) {
+        valid = TRUE
+        for (m in (cur+1):(cur+gr)) {
+          Wm[m,] = wg * scale
+          if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg) * scale}
+          Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
+          if (max(abs(eigen(Am[m,,])$values)) >= .95) {
+            valid = FALSE
+            Wm[(cur+1):m,] = 0; Am[(cur+1):m,,] = 0
+            break
+          }
+        }
+        if (valid) {break}
+      }
     }
     cur = cur + gr
   }
@@ -147,12 +159,15 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0,
 #' @param p Dimension of the PVAR, i.e., number of variables; can be a vector.
 #' @param r Rank of the low-rank component; can be a vector.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices; can be a vector
-#' @param C The specified nuclear norm.
-#' @param G Number of groups in the panel.
-#' @param isolate Integer or fraction, the number of isolates in the panel model.
+#' @param C The specified nuclear norm. Default is \code{C = sqrt(p * r)}.
+#' @param G.W Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.
+#' @param G.S Sparse group assignment in the panel, excluding \code{sg_s} singular ones. Default is \code{G.S = 1:(M - sg_s)}.
+#' @param isolate Integer or fraction, the number of rescaling isolates in the panel model.
 #' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
 #' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
-#' @param G.sd The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.
+#' @param GW.sd The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.
+#' @param GS.sd The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.
+#' @param GS.frac The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.
 #' @param seed Random seed.
 #' @param prl If \code{is.numeric(prl)} and \code{prl >= 1}, then its rounded integer is treated as the number of cores for parallel simulation. By default \code{prl = NULL} and simulations are generated sequentially.
 #'
@@ -173,16 +188,18 @@ simuPar = function(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0,
 #' @export
 #'
 #' @examples simuDP(1, M = 5, p = 10, r = 3, s = 0.02, prl = 2)
-simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = NULL, C = 1,
-                  G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0, seed = NULL, prl = NULL){
+simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = NULL, C = sqrt(p * r),
+                  G.W = NULL, G.S = NULL, isolate = 0, sg_w = 0, sg_s = 0,
+                  GW.sd = 0, GS.sd = 0, GS.frac = 0, seed = NULL, prl = NULL){
   if (!is.null(seed)) {set.seed(seed)}
   if (is.null(Pars)) {
     size_par = c(length(M), length(p), length(r), length(s))
     M.i = p.i = r.i = s.i = NULL
     Pars = foreach(M.i = M, p.i = p, r.i = r, s.i = s) %do%
       {
-        simuPar(M.i, p.i, r.i, s.i, C = C, G = G,
-                isolate = isolate, sg_w = sg_w, sg_s = sg_s, G.sd = G.sd)
+        simuPar(M.i, p.i, r.i, s.i, C = C, G.W = G.W, G.S = G.S,
+                isolate = isolate, sg_w = sg_w, sg_s = sg_s,
+                GW.sd = GW.sd, GS.sd = GS.sd, GS.frac = GS.frac)
       }
     dim(Pars) = size_par
   }

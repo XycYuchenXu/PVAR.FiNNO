@@ -4,7 +4,21 @@
 \alias{simuPar}
 \title{Simulate PVAR Parameters}
 \usage{
-simuPar(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0)
+simuPar(
+  M,
+  p,
+  r,
+  s,
+  C = sqrt(p * r),
+  G.W = NULL,
+  G.S = NULL,
+  isolate = 0,
+  sg_w = 0,
+  sg_s = 0,
+  GW.sd = 0,
+  GS.sd = 0,
+  GS.frac = 0
+)
 }
 \arguments{
 \item{M}{Size of the panel, i.e., number of entities.}
@@ -15,17 +29,23 @@ simuPar(M, p, r, s, C = 1, G = NULL, isolate = 0, sg_w = 0, sg_s = 0, G.sd = 0)
 
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices.}
 
-\item{C}{The specified nuclear norm.}
+\item{C}{The specified nuclear norm. Default is \code{C = sqrt(p * r).}}
 
-\item{G}{Number of groups in the panel.}
+\item{G.W}{Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.}
 
-\item{isolate}{Integer or fraction (\code{isolate = round(isolate * M)}), the number of isolates in the panel model.}
+\item{G.S}{Sparse group assignment in the panel, excluding \code{sg_s} singular ones. Default is \code{G.S = 1:(M - sg_s)}.}
+
+\item{isolate}{Integer or fraction (\code{isolate = round(isolate * M)}), the number of rescaling isolates in the panel model.}
 
 \item{sg_w}{Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.}
 
 \item{sg_s}{Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.}
 
-\item{G.sd}{The ratio of standard deviation versus the norm of the rescaling effects \code{W} in the same group. Default is \code{G.sd = 0} meaning exact equality in the group.}
+\item{GW.sd}{The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.}
+
+\item{GS.sd}{The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.}
+
+\item{GS.frac}{The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.}
 }
 \value{
 A named list:\itemize{
