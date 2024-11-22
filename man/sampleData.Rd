@@ -25,7 +25,7 @@ sampleData(
 
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices.}
 
-\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.}
+\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is less than \code{M}, the first number is recycled.}
 
 \item{n}{The index of the replicate of the simulated time series.}
 }

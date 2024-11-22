@@ -28,7 +28,7 @@ simuDP(
 \arguments{
 \item{N}{Number of replicates of simulated time series per setting.}
 
-\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers.}
+\item{TT}{The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is less than \code{M}, the first number is recycled.}
 
 \item{Pars}{The PVAR parameters generated from \code{simuPar}.}
 

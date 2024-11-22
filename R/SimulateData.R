@@ -124,28 +124,24 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     
     if (lab[g] != 'w') {
       valid = FALSE
-      while (!valid) {
-        wg = runif(p, 1/2, 1)
-        sd.wg = GW.sd * sqrt(mean(wg^2))
-        if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
-        scales = c(1.5, -1.5, 1.1, -1.1, 1, -1, .9, -.9, .75, -.75, .5, -.5)
-        for (scale in scales) {
-          valid = TRUE
-          for (m in (cur+1):(cur+gr)) {
-            Wm[m,] = wg * scale
-            if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg) * scale}
-            Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
-            if (max(abs(eigen(Am[m,,])$values)) >= .9) {
-              valid = FALSE
-              Wm[(cur+1):m,] = 0; Am[(cur+1):m,,] = 0
-              break
-            }
-          }
-          if (valid) {break}
-        }
+      wg = runif(p, 1/2, 1)
+      sd.wg = GW.sd * sqrt(mean(wg^2))
+      if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
+      for (m in (cur+1):(cur+gr)) {
+        Wm[m,] = wg
+        if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg)}
+        Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
       }
     }
     cur = cur + gr
+  }
+  
+  omega = max(apply(Am, 1, function(x){max(abs(eigen(x)$values))}))
+  rescale = runif(1, .8, .95) / omega
+  for (m in 1:M) {
+    Wm[m,] = Wm[m,] * rescale
+    Sm[[m]] = Sm[[m]] * rescale
+    Am[m,,] = Am[m,,] * rescale
   }
   return(list(Coef = list(A = Am, Sigma = Zm, W = Wm, Phi = Phi, S = Sm),
               r = r, M = M, p = p, s = s))
@@ -156,7 +152,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
 #' One can either input all the coefficients \code{(M, p, r, s)} to start from sampling the coefficient matrices, or it also supports inputting sampled coefficient matrices from \code{simuPar} for only time series simulation. In addition, if the input parameters \code{(M, p, r, s)} are of the vector format, then every combination of the setup is simulated.
 #'
 #' @param N Number of replicates of simulated time series per setting.
-#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers.
+#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is less than \code{M}, the first number is recycled.
 #' @param Pars The PVAR parameters generated from \code{simuPar}.
 #' @param M Size of the panel, i.e., number of entities; can be a vector.
 #' @param p Dimension of the PVAR, i.e., number of variables; can be a vector.
@@ -244,7 +240,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
 #' @param p Dimension of the PVAR, i.e., number of variables.
 #' @param r Rank of the low-rank component.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
-#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is not \code{M}, the first number is recycled.
+#' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is less than \code{M}, the first number is recycled.
 #' @param n The index of the replicate of the simulated time series.
 #'
 #' @return \code{Data} A list of panel time series data with dimension \code{nM} x \code{np} x \code{nr} x \code{ns} corresponding to the number of different parameter combinations. Each entry in the list is a length-\code{N} list of named lists\itemize{
@@ -258,7 +254,8 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
 sampleData = function(Coef, M = dim(Coef$A)[1], p = dim(Coef$A)[2], r = NULL, s = NULL, TT = NULL, n = 1){
   XTS = vector('list', length = M)
   if (is.null(TT)) {TT = rep(p*r*2, M)}
-  else if (length(TT) != M) {TT = rep(TT[1], M)}
+  else if (length(TT) < M) {TT = rep(TT[1], M)}
+  else {TT = TT[1:M]}
   for (m in 1:M) {
     Zm = Coef$Sigma[m]
     Xm = matrix(0, p, TT[m] + 1)
