@@ -135,7 +135,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
             Wm[m,] = wg * scale
             if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg) * scale}
             Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
-            if (max(abs(eigen(Am[m,,])$values)) >= .95) {
+            if (max(abs(eigen(Am[m,,])$values)) >= .9) {
               valid = FALSE
               Wm[(cur+1):m,] = 0; Am[(cur+1):m,,] = 0
               break
