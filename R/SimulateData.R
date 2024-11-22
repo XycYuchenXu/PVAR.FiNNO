@@ -124,7 +124,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     
     if (lab[g] != 'w') {
       valid = FALSE
-      wg = runif(p, 1/2, 1)
+      wg = exp(runif(p, -1, 1))
       sd.wg = GW.sd * sqrt(mean(wg^2))
       if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
       for (m in (cur+1):(cur+gr)) {
