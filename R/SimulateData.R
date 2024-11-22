@@ -130,7 +130,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
       for (m in (cur+1):(cur+gr)) {
         Wm[m,] = wg
         if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg)}
-        Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
+        Am[m,,] = Phi * Wm[m,] + as.matrix(Sm[[m]])
       }
     }
     cur = cur + gr
