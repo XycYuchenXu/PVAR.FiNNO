@@ -123,23 +123,26 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     }
     
     if (lab[g] != 'w') {
-      wg = runif(p, 1/2, 1)
-      sd.wg = GW.sd * sqrt(mean(wg^2))
-      if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
-      scales = c(2, 1.5, 1.1, 1, 0.9, 0.75, 0.5, 0.25)
-      for (scale in scales) {
-        valid = TRUE
-        for (m in (cur+1):(cur+gr)) {
-          Wm[m,] = wg * scale
-          if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg) * scale}
-          Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
-          if (max(abs(eigen(Am[m,,])$values)) >= .95) {
-            valid = FALSE
-            Wm[(cur+1):m,] = 0; Am[(cur+1):m,,] = 0
-            break
+      valid = FALSE
+      while (!valid) {
+        wg = runif(p, 1/2, 1)
+        sd.wg = GW.sd * sqrt(mean(wg^2))
+        if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
+        scales = c(1.5, -1.5, 1.1, -1.1, 1, -1, .9, -.9, .75, -.75, .5, -.5, .25, -.25, .1, -.1)
+        for (scale in scales) {
+          valid = TRUE
+          for (m in (cur+1):(cur+gr)) {
+            Wm[m,] = wg * scale
+            if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg) * scale}
+            Am[m,,] = Phi * Wm[m,] + as.matrix(sm)
+            if (max(abs(eigen(Am[m,,])$values)) >= .95) {
+              valid = FALSE
+              Wm[(cur+1):m,] = 0; Am[(cur+1):m,,] = 0
+              break
+            }
           }
+          if (valid) {break}
         }
-        if (valid) {break}
       }
     }
     cur = cur + gr
