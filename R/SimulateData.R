@@ -128,7 +128,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
         wg = runif(p, 1/2, 1)
         sd.wg = GW.sd * sqrt(mean(wg^2))
         if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
-        scales = c(1.5, -1.5, 1.1, -1.1, 1, -1, .9, -.9, .75, -.75, .5, -.5, .25, -.25, .1, -.1)
+        scales = c(1.5, -1.5, 1.1, -1.1, 1, -1, .9, -.9, .75, -.75, .5, -.5)
         for (scale in scales) {
           valid = TRUE
           for (m in (cur+1):(cur+gr)) {
