@@ -98,7 +98,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   if (is.null(G.S)) {G.S = 1:(M - sg_s)} else {G.S = as.integer(factor(G.S))}
   Sms = vector('list', length = length(unique(G.S))); sd.ws = rep(0, length(Sms))
   for (ss in 1:length(Sms)) {
-    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p*p), 2*s*p*p)))
+    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p*p), 2*s*p*p))) * maxPhi_p
     dsm = which(abs(diag(sm)) >= .8)
     if (length(dsm) > 0) {diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5)}
     Sms[[ss]] = sm
