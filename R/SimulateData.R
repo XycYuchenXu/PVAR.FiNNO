@@ -52,7 +52,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   Phi = Phi / sqrt(rowSums(Phi^2))
   Phi = C * Phi / sum(svd(Phi)$d)
 
-  maxPhi_p = max(Phi) * sqrt(p)
+  maxPhi_p = max(abs(Phi)) * sqrt(p)
 
   Am = array(0, dim = c(M, p, p))
   Wm = matrix(0, M, p)
