@@ -52,9 +52,9 @@ simuDP(
 
 \item{sg_s}{Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.}
 
-\item{GW.sd}{The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.}
+\item{GW.sd}{The standard deviation of the rescaling effects \code{W} in the same group when \code{GW.sd >= 0}. Default is \code{GW.sd = 0} meaning exact equality in the group. If \code{GW.sd < 0}, then \code{-GW.sd} is the ratio of standard deviation versus the mean magnitude of \code{W} in the same group.}
 
-\item{GS.sd}{The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.}
+\item{GS.sd}{The standard deviation of the sparse components \code{S} in the same group when \code{GS.sd >= 0}. Default is \code{GS.sd = 0} meaning exact equality in the group. If \code{GS.sd < 0}, then \code{-GS.sd} is the ratio of standard deviation versus the mean magnitude of \code{S} in the same group.}
 
 \item{GS.frac}{The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.}
 

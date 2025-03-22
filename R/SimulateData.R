@@ -14,8 +14,8 @@
 #' @param isolate Integer or fraction (\code{isolate = round(isolate * M)}), the number of rescaling isolates in the panel model.
 #' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
 #' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
-#' @param GW.sd The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.
-#' @param GS.sd The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.
+#' @param GW.sd The standard deviation of the rescaling effects \code{W} in the same group when \code{GW.sd >= 0}. Default is \code{GW.sd = 0} meaning exact equality in the group. If \code{GW.sd < 0}, then \code{-GW.sd} is the ratio of standard deviation versus the mean magnitude of \code{W} in the same group.
+#' @param GS.sd The standard deviation of the sparse components \code{S} in the same group when \code{GS.sd >= 0}. Default is \code{GS.sd = 0} meaning exact equality in the group. If \code{GS.sd < 0}, then \code{-GS.sd} is the ratio of standard deviation versus the mean magnitude of \code{S} in the same group.
 #' @param GS.frac The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.
 #'
 #' @return A named list:\itemize{
@@ -102,7 +102,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     dsm = which(abs(diag(sm)) >= .8)
     if (length(dsm) > 0) {diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5)}
     Sms[[ss]] = sm
-    sd.ws[ss] = sqrt(mean(sm@x^2))
+    sd.ws[ss] = ifelse(GS.sd < 0, - GS.sd * sqrt(mean(sm@x^2)), GS.sd)
   }
   
   cur = 0
@@ -112,8 +112,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     for (m in (cur+1):(cur+gr)) {
       if (lab[g] != 's') {
         sm = Sms[[G.S[m]]]
-        sm@x = sm@x + rnorm(length(sm@i), sd = sd.ws[G.S[m]] * GS.sd)
-        sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]] * GS.sd
+        sm@x = sm@x + rnorm(length(sm@i), sd = sd.ws[G.S[m]])
+        sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]]
       } else {
         sm = matrix(0, p, p)
       }
@@ -125,11 +125,10 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
     if (lab[g] != 'w') {
       valid = FALSE
       wg = exp(runif(p, -1, 1))
-      sd.wg = GW.sd * sqrt(mean(wg^2))
+      sd.wg = ifelse(GW.sd < 0, - GW.sd * sqrt(mean(wg^2)), GW.sd)
       if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
       for (m in (cur+1):(cur+gr)) {
-        Wm[m,] = wg
-        if (sd.wg > 0) {Wm[m,] = Wm[m,] + rnorm(p, sd = sd.wg)}
+        Wm[m,] = wg + rnorm(p, sd = sd.wg)
         Am[m,,] = Phi * Wm[m,] + as.matrix(Sm[[m]])
       }
     }
@@ -164,8 +163,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
 #' @param isolate Integer or fraction, the number of rescaling isolates in the panel model.
 #' @param sg_w Integer or fraction (\code{sg_w = round(sg_w * M)}), the number of entities with singular W (i.e., purely sparse entities) in the panel.
 #' @param sg_s Integer or fraction (\code{sg_s = round(sg_s * M)}), the number of entities with singular S (i.e., purely low-rank entities) in the panel.
-#' @param GW.sd The ratio of standard deviation versus the mean magnitude of the rescaling effects \code{W} in the same group. Default is \code{GW.sd = 0} meaning exact equality in the group.
-#' @param GS.sd The ratio of standard deviation versus the mean magnitude of the sparse components \code{S} in the same group. Default is \code{GS.sd = 0} meaning exact equality in the group.
+#' @param GW.sd The standard deviation of the rescaling effects \code{W} in the same group when \code{GW.sd >= 0}. Default is \code{GW.sd = 0} meaning exact equality in the group. If \code{GW.sd < 0}, then \code{-GW.sd} is the ratio of standard deviation versus the mean magnitude of \code{W} in the same group.
+#' @param GS.sd The standard deviation of the sparse components \code{S} in the same group when \code{GS.sd >= 0}. Default is \code{GS.sd = 0} meaning exact equality in the group. If \code{GS.sd < 0}, then \code{-GS.sd} is the ratio of standard deviation versus the mean magnitude of \code{S} in the same group.
 #' @param GS.frac The density ratio of the sparse perturbation versus mean in the same group. Default is \code{GS.frac = 0} meaning no extra non-zero elements.
 #' @param seed Random seed.
 #' @param prl If \code{is.numeric(prl)} and \code{prl >= 1}, then its rounded integer is treated as the number of cores for parallel simulation. By default \code{prl = NULL} and simulations are generated sequentially.
