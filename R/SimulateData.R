@@ -34,6 +34,7 @@
 #' @import Matrix
 #' @importFrom stats runif
 #' @importFrom stats rnorm
+#' @importFrom stats quantile
 #' @importFrom stats rgamma
 #' @importFrom stats rpois
 #' @importFrom Rdpack reprompt
@@ -52,13 +53,17 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   Phi = Phi / sqrt(rowSums(Phi^2))
   Phi = C * Phi / sum(svd(Phi)$d)
 
-  maxPhi_p = max(abs(Phi)) * sqrt(p)
-
+  if (GW.sd > .4 / sqrt(sum(Phi[1,]^2))) {
+    cat('The input "GW.sd" will likely lead to unstationary VAR. Try a smaller value.')
+    return()
+  }
+  if (GS.sd > .6 / sqrt(s * p)) {
+    cat('The input "GS.sd" will likely lead to unstationary VAR. Try a smaller value.')
+    return()
+  }
+  
   Am = array(0, dim = c(M, p, p))
   Wm = matrix(0, M, p)
-  # Sm = array(0, dim = c(M, p, p))
-  # Am = vector('list', M)
-  # Wm = vector('list', M)
   Sm = vector('list', M)
   Zm = sqrt(1/rgamma(M, shape = 5, scale = 5))
 
@@ -68,8 +73,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   if (sg_s > 0) {
     if (sg_s < 1 && sg_s > 0) {sg_s = M * sg_s}
     sg_s = round(sg_s)
-    if (sg_s > M) {sg_s = 0; cat('Invalid sg_w parameter.')}
-    if (sg_s > 0) {grs = c(sg_s, grs); lab = c('s', lab)}
+    if (sg_s > M) {sg_s = 0; cat('Invalid sg_s parameter.')}
+    if (sg_s > 0) {grs = c(rep(1, sg_s), grs); lab = c(rep('s', sg_s), lab)}
   }
   sg_w = max(0, sg_w)
   if (sg_w > 0) {
@@ -95,53 +100,104 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   }
   G.W = length(grs)
   
-  if (is.null(G.S)) {G.S = 1:(M - sg_s)} else {G.S = as.integer(factor(G.S))}
-  Sms = vector('list', length = length(unique(G.S))); sd.ws = rep(0, length(Sms))
+  cur = 0
+  if (G.W <= p) {
+    Wm_g = qr.Q(qr(matrix(rnorm(G.W * p), p)))
+  } else {
+    Wm_g = matrix(rnorm(G.W * p), p)
+  }
+  for (g in 1:G.W) {
+    gr = grs[g]
+    if (lab[g] != 'w') {
+      wg = Wm_g[,g]
+      for (m in (cur+1):(cur+gr)) {
+        Wm[m,] = wg
+        if (GW.sd < 0) {
+          Wm[m,] = Wm[m,] + rnorm(p, sd = - GW.sd * sqrt(mean(wg^2)))
+        }
+        Am[m,,] = Phi * Wm[m,]
+      }
+    }
+    cur = cur + gr
+  }
+  wphi_max = as.numeric(quantile(abs(Am), .99) * sqrt(p))
+  
+  if (is.null(G.S)) {G.S = 1:(M - sg_s)} else {G.S = as.integer(factor(G.S[1:(M - sg_s)]))}
+  Sms = vector('list', length = length(unique(G.S)))
+  if (GS.sd < 0) {sd.ws = rep(0, length(Sms))}
   for (ss in 1:length(Sms)) {
-    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p*p), 2*s*p*p))) * maxPhi_p
+    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p^2), 1.2*s*p^2))) * wphi_max
     dsm = which(abs(diag(sm)) >= .8)
-    if (length(dsm) > 0) {diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5)}
+    if (length(dsm) > 0) {
+      am = max(abs(apply(Am[which(G.S == ss),,], 1, diag)[dsm,]))
+      diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * (1 - am)
+    }
     Sms[[ss]] = sm
-    sd.ws[ss] = ifelse(GS.sd < 0, - GS.sd * sqrt(mean(sm@x^2)), GS.sd)
+    if (GS.sd < 0) {sd.ws[ss] = - GS.sd * sqrt(mean(sm@x^2))}
   }
   
   cur = 0
   for (g in 1:G.W) {
     gr = grs[g]
-
     for (m in (cur+1):(cur+gr)) {
       if (lab[g] != 's') {
         sm = Sms[[G.S[m]]]
-        sm@x = sm@x + rnorm(length(sm@i), sd = sd.ws[G.S[m]])
-        sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]]
+        if (GS.sd < 0) {
+          sm@x = sm@x + rnorm(length(sm@i), sd = sd.ws[G.S[m]])
+          sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]]
+        }
       } else {
         sm = matrix(0, p, p)
       }
       
-      if (lab[g] == 'w') {Am[m,,] = as.matrix(sm)}
       Sm[[m]] = sm
-    }
-    
-    if (lab[g] != 'w') {
-      valid = FALSE
-      wg = exp(runif(p, -1, 1))
-      sd.wg = ifelse(GW.sd < 0, - GW.sd * sqrt(mean(wg^2)), GW.sd)
-      if (G.W < M) {wg = wg * sample(c(-1, 1), p, replace = TRUE)}
-      for (m in (cur+1):(cur+gr)) {
-        Wm[m,] = wg + rnorm(p, sd = sd.wg)
-        Am[m,,] = Phi * Wm[m,] + as.matrix(Sm[[m]])
-      }
+      Am[m,,] = Am[m,,] + as.matrix(sm)
     }
     cur = cur + gr
   }
   
-  omega = max(apply(Am, 1, function(x){max(abs(eigen(x)$values))}))
-  rescale = runif(1, .8, .95) / omega
-  for (m in 1:M) {
-    Wm[m,] = Wm[m,] * rescale
-    Sm[[m]] = Sm[[m]] * rescale
-    Am[m,,] = Am[m,,] * rescale
+  omega = apply(Am, 1, function(x){max(abs(eigen(x)$values))})
+  rescale = runif(1, .8, .95) / max(omega)
+  Wm = Wm * rescale; Am = Am * rescale
+  Sm = lapply(Sm, function(x) x * rescale)
+  
+  if (GW.sd > 0 || GS.sd > 0) {
+    repeated_simu = c()
+    for (m in 1:M) {
+      simu = TRUE
+      while (simu) {
+        am = Am[m,,]; wm = rep(0,p); sm = rsparsematrix(p,p,0)
+        if (GW.sd > 0 && startsWith(lab[which(m <= cumsum(grs))[1]], 'c')) {
+          wm = rnorm(p, sd = GW.sd)
+          am = am + Phi * wm
+        }
+        
+        if (GS.sd > 0 && m <= M - sg_s && sum(G.S == G.S[m]) > 1) {
+          sm_temp = Sm[[m]]
+          sm = sm_temp
+          sm@x = rnorm(length(sm@i), sd = GS.sd)
+          sm = sm + rsparsematrix(p, p, density = s * GS.frac) * GS.sd
+          dsm = which(abs(diag(sm)) >= .8)
+          if (length(dsm) > 0) {
+            diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * (1 - max(abs(diag(am)[dsm])))
+          }
+          am = am + as.matrix(sm)
+        }
+        if (max(abs(eigen(am)$values)) < 1) {
+          simu = FALSE
+          Am[m,,] = am; Wm[m,] = Wm[m,] + wm; Sm[[m]] = Sm[[m]] + sm
+        } else {repeated_simu = c(repeated_simu, m)}
+      }
+    }
+    if (length(repeated_simu) > 0) {
+      warning(
+        paste('The Perturbation for the entity/entities',
+              paste(repeated_simu, collapse = ', '),
+              'is/are re-simulated to ensure a stationary VAR. The noise distribution may be biased.')
+      )
+    }
   }
+  
   return(list(Coef = list(A = Am, Sigma = Zm, W = Wm, Phi = Phi, S = Sm),
               r = r, M = M, p = p, s = s))
 }
