@@ -32,9 +32,9 @@
 #' @import foreach
 #' @import progressr
 #' @import Matrix
+#' @importFrom stats quantile
 #' @importFrom stats runif
 #' @importFrom stats rnorm
-#' @importFrom stats quantile
 #' @importFrom stats rgamma
 #' @importFrom stats rpois
 #' @importFrom Rdpack reprompt
@@ -102,7 +102,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   
   cur = 0
   if (G.W <= p) {
-    Wm_g = qr.Q(qr(matrix(rnorm(G.W * p), p)))
+    Wm_g = qr.Q(qr(matrix(rnorm(G.W * p), p))) * sqrt(p)
   } else {
     Wm_g = matrix(rnorm(G.W * p), p)
   }
