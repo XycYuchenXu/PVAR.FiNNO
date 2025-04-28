@@ -128,6 +128,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
         sm = rsparsematrix(p, p, 0)
       }
       Sm[[m]] = sm
+      Am[m,,] = as.matrix(sm)
 
       wm = Wm_g[,g]
       if (lab[g] != 'w') {
@@ -135,12 +136,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
           wm = wm + rnorm(p, sd = - GW.sd * sqrt(mean(wm^2)))
         }
         Wm[m,] = wm
-        Am[m,,] = (Phi + as.matrix(sm)) * wm
-      } else {
-        wm = wm / 2
-        Am[m,,] = as.matrix(sm) * wm
       }
-      Sm[[m]] = Sm[[m]] * wm
+      Am[m,,] = Am[m,,] + Phi * wm
     }
     cur = cur + gr
   }
