@@ -32,7 +32,6 @@
 #' @import foreach
 #' @import progressr
 #' @import Matrix
-#' @importFrom stats quantile
 #' @importFrom stats runif
 #' @importFrom stats rnorm
 #' @importFrom stats rgamma
@@ -52,7 +51,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   Phi = as.matrix(crossprod(t(L), t(R) * Lambda))
   Phi = Phi / sqrt(rowSums(Phi^2))
   Phi = C * Phi / sum(svd(Phi)$d)
-
+  maxPhi_p = max(abs(Phi)) * sqrt(p) / 2
+  
   if (GW.sd > .4 / sqrt(sum(Phi[1,]^2))) {
     cat('The input "GW.sd" will likely lead to unstationary VAR. Try a smaller value.')
     return()
@@ -100,43 +100,21 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   }
   G.W = length(grs)
   
-  cur = 0
-  if (G.W <= p) {
-    Wm_g = qr.Q(qr(matrix(rnorm(G.W * p), p))) * sqrt(p)
-  } else {
-    Wm_g = matrix(rnorm(G.W * p), p)
-  }
-  for (g in 1:G.W) {
-    gr = grs[g]
-    if (lab[g] != 'w') {
-      wg = Wm_g[,g]
-      for (m in (cur+1):(cur+gr)) {
-        Wm[m,] = wg
-        if (GW.sd < 0) {
-          Wm[m,] = Wm[m,] + rnorm(p, sd = - GW.sd * sqrt(mean(wg^2)))
-        }
-        Am[m,,] = Phi * Wm[m,]
-      }
-    }
-    cur = cur + gr
-  }
-  wphi_max = as.numeric(quantile(abs(Am), .99) * sqrt(p))
-  
   if (is.null(G.S)) {G.S = 1:(M - sg_s)} else {G.S = as.integer(factor(G.S[1:(M - sg_s)]))}
   Sms = vector('list', length = length(unique(G.S)))
   if (GS.sd < 0) {sd.ws = rep(0, length(Sms))}
   for (ss in 1:length(Sms)) {
-    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p^2), 1.2*s*p^2))) * wphi_max
-    dsm = which(abs(diag(sm)) >= .8)
+    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p^2), 1.2*s*p^2))) * maxPhi_p
+    dsm = which(abs(diag(sm)) >= .5 * maxPhi_p)
     if (length(dsm) > 0) {
-      am = max(abs(apply(Am[which(G.S == ss),,], 1, diag)[dsm,]))
-      diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * (1 - am)
+      diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * maxPhi_p
     }
     Sms[[ss]] = sm
     if (GS.sd < 0) {sd.ws[ss] = - GS.sd * sqrt(mean(sm@x^2))}
   }
   
   cur = 0
+  Wm_g = matrix(exp(runif(G.W * p, -2, 1)) * sample(c(-1, 1), G.W * p, replace = T), p)
   for (g in 1:G.W) {
     gr = grs[g]
     for (m in (cur+1):(cur+gr)) {
@@ -147,11 +125,22 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
           sm = sm + rsparsematrix(p, p, density = s * GS.frac) * sd.ws[G.S[m]]
         }
       } else {
-        sm = matrix(0, p, p)
+        sm = rsparsematrix(p, p, 0)
       }
-      
       Sm[[m]] = sm
-      Am[m,,] = Am[m,,] + as.matrix(sm)
+
+      wm = Wm_g[,g]
+      if (lab[g] != 'w') {
+        if (GW.sd < 0) {
+          wm = wm + rnorm(p, sd = - GW.sd * sqrt(mean(wm^2)))
+        }
+        Wm[m,] = wm
+        Am[m,,] = (Phi + as.matrix(sm)) * wm
+      } else {
+        wm = wm / 2
+        Am[m,,] = as.matrix(sm) * wm
+      }
+      Sm[[m]] = Sm[[m]] * wm
     }
     cur = cur + gr
   }
@@ -179,7 +168,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
           sm = sm + rsparsematrix(p, p, density = s * GS.frac) * GS.sd
           dsm = which(abs(diag(sm)) >= .8)
           if (length(dsm) > 0) {
-            diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * (1 - max(abs(diag(am)[dsm])))
+            diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * max(1 - max(abs(diag(am)[dsm])), GS.sd)
           }
           am = am + as.matrix(sm)
         }
