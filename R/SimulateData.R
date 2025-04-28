@@ -51,7 +51,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   Phi = as.matrix(crossprod(t(L), t(R) * Lambda))
   Phi = Phi / sqrt(rowSums(Phi^2))
   Phi = C * Phi / sum(svd(Phi)$d)
-  maxPhi_p = max(abs(Phi)) * sqrt(p) / 2
+  maxPhi_p = max(abs(Phi)) * sqrt(p)
   
   if (GW.sd > .4 / sqrt(sum(Phi[1,]^2))) {
     cat('The input "GW.sd" will likely lead to unstationary VAR. Try a smaller value.')
