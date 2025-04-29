@@ -9,7 +9,6 @@ simuPar(
   p,
   r,
   s,
-  C = sqrt(p * r),
   G.W = NULL,
   G.S = NULL,
   isolate = 0,
@@ -28,8 +27,6 @@ simuPar(
 \item{r}{Rank of the low-rank component.}
 
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices.}
-
-\item{C}{The specified nuclear norm. Default is \code{C = sqrt(p * r).}}
 
 \item{G.W}{Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.}
 
@@ -63,7 +60,9 @@ A named list:\itemize{
 Aims to simulate Panel VAR data parameters, including the transition matrices of the form \eqn{A_m = W_m \Phi + S_m} with all these components, and covariance matrices of the innovations being scalar matrices \eqn{\Sigma_m = \sigma_m^2 I_p}.
 }
 \details{
-If there exist mixture patterns in the simulated parameters, they are arranged in the following order: 1. Clusters; 2. Isolates; 3. Singular S; Singular W.
+If there exist mixture patterns in the simulated parameters, they are arranged in the following order: 1. Clusters; 2. Isolates; 3. Singular W; Singular S.
+
+For identifiability, the rows of the low-rank basis \eqn{\Phi} are unit vectors. If users need to fix the nuclear norm of \eqn{\Phi}, it can be done manually by normalization afterwards.
 }
 \examples{
 data = simuPar(5, 10, 3, 0.02)

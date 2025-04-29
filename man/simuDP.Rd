@@ -12,7 +12,6 @@ simuDP(
   p = NULL,
   r = NULL,
   s = NULL,
-  C = sqrt(p * r),
   G.W = NULL,
   G.S = NULL,
   isolate = 0,
@@ -39,8 +38,6 @@ simuDP(
 \item{r}{Rank of the low-rank component; can be a vector.}
 
 \item{s}{The average fraction of nonzero elements in the sparse components of the coefficient matrices; can be a vector}
-
-\item{C}{The specified nuclear norm. Default is \code{C = sqrt(p * r)}.}
 
 \item{G.W}{Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.}
 
@@ -74,6 +71,9 @@ A named list of PVAR parameters and data. In particular denote \code{nM = length
 }
 \description{
 One can either input all the coefficients \code{(M, p, r, s)} to start from sampling the coefficient matrices, or it also supports inputting sampled coefficient matrices from \code{simuPar} for only time series simulation. In addition, if the input parameters \code{(M, p, r, s)} are of the vector format, then every combination of the setup is simulated.
+}
+\details{
+For identifiability, the rows of the low-rank basis \eqn{\Phi} are unit vectors. If users need to fix the nuclear norm of \eqn{\Phi}, it can be done manually by normalization afterwards.
 }
 \examples{
 simuDP(1, M = 5, p = 10, r = 3, s = 0.02, prl = 2)

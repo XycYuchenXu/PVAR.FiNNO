@@ -2,13 +2,14 @@
 #'
 #' Aims to simulate Panel VAR data parameters, including the transition matrices of the form \eqn{A_m = W_m \Phi + S_m} with all these components, and covariance matrices of the innovations being scalar matrices \eqn{\Sigma_m = \sigma_m^2 I_p}.
 #'
-#' If there exist mixture patterns in the simulated parameters, they are arranged in the following order: 1. Clusters; 2. Isolates; 3. Singular S; Singular W.
+#' If there exist mixture patterns in the simulated parameters, they are arranged in the following order: 1. Clusters; 2. Isolates; 3. Singular W; Singular S.
+#' 
+#' For identifiability, the rows of the low-rank basis \eqn{\Phi} are unit vectors. If users need to fix the nuclear norm of \eqn{\Phi}, it can be done manually by normalization afterwards.
 #'
 #' @param M Size of the panel, i.e., number of entities.
 #' @param p Dimension of the PVAR, i.e., number of variables.
 #' @param r Rank of the low-rank component.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices.
-#' @param C The specified nuclear norm. Default is \code{C = sqrt(p * r).}
 #' @param G.W Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.
 #' @param G.S Sparse group assignment in the panel, excluding \code{sg_s} singular ones. Default is \code{G.S = 1:(M - sg_s)}.
 #' @param isolate Integer or fraction (\code{isolate = round(isolate * M)}), the number of rescaling isolates in the panel model.
@@ -40,7 +41,7 @@
 #' @export
 #'
 #' @examples data = simuPar(5, 10, 3, 0.02)
-simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate = 0,
+simuPar = function(M, p, r, s, G.W = NULL, G.S = NULL, isolate = 0,
                    sg_w = 0, sg_s = 0, GW.sd = 0, GS.sd = 0, GS.frac = 0){
   L = matrix(rnorm(p * p), nrow = p)
   L = expm(L - t(L))[,1:r]
@@ -50,10 +51,9 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
   Lambda = exp(runif(r))
   Phi = as.matrix(crossprod(t(L), t(R) * Lambda))
   Phi = Phi / sqrt(rowSums(Phi^2))
-  Phi = C * Phi / sum(svd(Phi)$d)
   maxPhi_p = max(abs(Phi)) * sqrt(p)
   
-  if (GW.sd > .4 / sqrt(sum(Phi[1,]^2))) {
+  if (GW.sd > .4) {
     cat('The input "GW.sd" will likely lead to unstationary VAR. Try a smaller value.')
     return()
   }
@@ -191,6 +191,8 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
 #' Simulate PVAR parameters and time series data
 #'
 #' One can either input all the coefficients \code{(M, p, r, s)} to start from sampling the coefficient matrices, or it also supports inputting sampled coefficient matrices from \code{simuPar} for only time series simulation. In addition, if the input parameters \code{(M, p, r, s)} are of the vector format, then every combination of the setup is simulated.
+#' 
+#' For identifiability, the rows of the low-rank basis \eqn{\Phi} are unit vectors. If users need to fix the nuclear norm of \eqn{\Phi}, it can be done manually by normalization afterwards.
 #'
 #' @param N Number of replicates of simulated time series per setting.
 #' @param TT The length of time series, default a scalar \code{TT = p * r * 2}. The user can input an integer or a lengths-\code{M} vector of integers. If the length of the input integer vector is less than \code{M}, the first number is recycled.
@@ -199,7 +201,6 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
 #' @param p Dimension of the PVAR, i.e., number of variables; can be a vector.
 #' @param r Rank of the low-rank component; can be a vector.
 #' @param s The average fraction of nonzero elements in the sparse components of the coefficient matrices; can be a vector
-#' @param C The specified nuclear norm. Default is \code{C = sqrt(p * r)}.
 #' @param G.W Number of rescaling groups in the panel, excluding singular ones and isolates. Default is \code{G.W = M - sg_w - sg_s - isolate}.
 #' @param G.S Sparse group assignment in the panel, excluding \code{sg_s} singular ones. Default is \code{G.S = 1:(M - sg_s)}.
 #' @param isolate Integer or fraction, the number of rescaling isolates in the panel model.
@@ -228,7 +229,7 @@ simuPar = function(M, p, r, s, C = sqrt(p * r), G.W = NULL, G.S = NULL, isolate 
 #' @export
 #'
 #' @examples simuDP(1, M = 5, p = 10, r = 3, s = 0.02, prl = 2)
-simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = NULL, C = sqrt(p * r),
+simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = NULL,
                   G.W = NULL, G.S = NULL, isolate = 0, sg_w = 0, sg_s = 0,
                   GW.sd = 0, GS.sd = 0, GS.frac = 0, seed = NULL, prl = NULL){
   if (!is.null(seed)) {set.seed(seed)}
@@ -237,7 +238,7 @@ simuDP = function(N, TT = NULL, Pars = NULL, M = NULL, p = NULL, r = NULL, s = N
     M.i = p.i = r.i = s.i = NULL
     Pars = foreach(M.i = M, p.i = p, r.i = r, s.i = s) %do%
       {
-        simuPar(M.i, p.i, r.i, s.i, C = C, G.W = G.W, G.S = G.S,
+        simuPar(M.i, p.i, r.i, s.i, G.W = G.W, G.S = G.S,
                 isolate = isolate, sg_w = sg_w, sg_s = sg_s,
                 GW.sd = GW.sd, GS.sd = GS.sd, GS.frac = GS.frac)
       }
