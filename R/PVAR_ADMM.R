@@ -30,8 +30,7 @@
 #' @param bulk If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
-#' @param center Logical, whether the time series data should be centered. Default is True.
-#' @param std Logical, whether the time series data should be normalized. Default is True.
+#' @param normalize Logical, whether the time series data should be normalized. Default is True.
 #'
 #' @return A named list of estimators and some metrics:\itemize{
 #' \item \code{Phi}: the \code{p} x \code{p} estimator of \eqn{\Phi} in the objective function above, not necessarily low-rank.
@@ -58,19 +57,13 @@
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, center = T, std = T){
+                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
   tm = proc.time()[3]
   status = 0
   
-  if (center) {
-    for (m in 1:M) {
-      XTS[[m]] = XTS[[m]] - rowMeans(XTS[[m]])
-    }
-  }
-  if (std) {
-    for (m in 1:M) {
-      XTS[[m]] = XTS[[m]] / sd(XTS[[m]])
-    }
+  if (normalize) {
+    XTS = lapply(1:M, function(x) XTS[[x]] - rowMeans(XTS[[x]]))
+    XTS = lapply(1:M, function(x) XTS[[x]] / sqrt(mean(XTS[[x]]^2)))
   }
 
   if (is.null(Gamma)) Gamma = matrix(0, p, p)
