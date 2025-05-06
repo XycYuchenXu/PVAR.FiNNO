@@ -118,7 +118,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! r:%d, e:%.3f i:%d, G:%.4f, E:%.3f', r, eta, i, traj[i+1], 1000 * rele[i]),
+    pb(sprintf('Done! r:%d, e:%.3f i:%d, G:%.4f, E:%.3f', r, eta, i, traj[i+1], 10000 * rele[i]),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
