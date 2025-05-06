@@ -29,8 +29,9 @@ IC_PVAR = function(XTS, W, S, Phi, C = 1, TT = sapply(XTS, ncol) - 1,
     rss = rss + sum(res^2)# * crossprod(pres_m, res))
     dof = dof + sum(S[[m]] != 0)
   }
-  ics = c(rss, sum(TT) * p * log(rss / (sum(TT) * p)) + dof * c(2, log(sum(TT)), 2 * log(log(sum(TT)))))
-  names(ics) = c('RSS', 'AIC', 'BIC', 'HQC')
+  ics = c(rss, sum(TT) * p * log(rss / (sum(TT) * p)) + dof * c(2, log(sum(TT * p)), 2 * log(log(sum(TT * p)))))
+  ics = c(ics, ics[3] + sum(log((p * M + p^2 - p + M * p^2 - dof + 1:dof) / (1:dof))))
+  names(ics) = c('RSS', 'AIC', 'BIC', 'HQC', 'eBIC')
   return(ics)
 }
 
