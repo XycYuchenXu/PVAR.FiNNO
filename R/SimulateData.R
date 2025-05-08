@@ -104,10 +104,10 @@ simuPar = function(M, p, r, s, G.W = NULL, G.S = NULL, isolate = 0,
   Sms = vector('list', length = length(unique(G.S)))
   if (GS.sd < 0) {sd.ws = rep(0, length(Sms))}
   for (ss in 1:length(Sms)) {
-    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p^2), 1.2*s*p^2))) * maxPhi_p
-    dsm = which(abs(diag(sm)) >= .5 * maxPhi_p)
+    sm = rsparsematrix(p, p, nnz = max(1, min(rpois(1,s*p^2), 1.2*s*p^2)))
+    dsm = which(abs(diag(sm)) >= .5)
     if (length(dsm) > 0) {
-      diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5) * maxPhi_p
+      diag(sm)[dsm] = runif(length(dsm), -0.5, 0.5)
     }
     Sms[[ss]] = sm
     if (GS.sd < 0) {sd.ws[ss] = - GS.sd * sqrt(mean(sm@x^2))}
@@ -115,6 +115,9 @@ simuPar = function(M, p, r, s, G.W = NULL, G.S = NULL, isolate = 0,
   
   cur = 0
   Wm_g = matrix(exp(runif(G.W * p, -2, 1)) * sample(c(-1, 1), G.W * p, replace = T), p)
+  s_rescale = sqrt(mean(Wm_g^2) / (s * p))
+  Sms = lapply(Sms, function(x) x * s_rescale)
+  
   for (g in 1:G.W) {
     gr = grs[g]
     for (m in (cur+1):(cur+gr)) {
