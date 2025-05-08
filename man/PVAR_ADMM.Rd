@@ -21,6 +21,7 @@ PVAR_ADMM(
   Phi_BL = NULL,
   Phi = NULL,
   Gamma = NULL,
+  WS = NULL,
   bulk = 1,
   perupdate = 1,
   kappa = NULL,
@@ -59,6 +60,8 @@ PVAR_ADMM(
 \item{Phi}{The initializer for \eqn{\Phi}.}
 
 \item{Gamma}{The initializer for the dual variable (Lagrange multiplier) \eqn{\Gamma}.}
+
+\item{WS}{The list of initializers for the rescaling \code{W} (a matrix of size \code{M} x \code{p}) and the sparse components \code{S} (a length-\code{M} list of \code{p} x \code{p} matrices).}
 
 \item{bulk}{If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.}
 

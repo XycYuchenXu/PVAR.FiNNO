@@ -27,6 +27,7 @@
 #' @param Phi_BL The initializer for the augmented variable \eqn{\Phi_c}.
 #' @param Phi The initializer for \eqn{\Phi}.
 #' @param Gamma The initializer for the dual variable (Lagrange multiplier) \eqn{\Gamma}.
+#' @param WS The list of initializers for the rescaling \code{W} (a matrix of size \code{M} x \code{p}) and the sparse components \code{S} (a length-\code{M} list of \code{p} x \code{p} matrices).
 #' @param bulk If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
@@ -56,7 +57,7 @@
 #' est = PVAR_ADMM(DP$Data$XTS, 5, 0.01, maxiter = 10, miniter = 3)
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
-                     pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL,
+                     pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL, WS = NULL,
                      bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
   tm = proc.time()[3]
   status = 0
@@ -80,7 +81,6 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     Phi_BL = updatePhi_BL(Phi + Gamma, Phi, kappa, r, C, p)
   }
   
-  WS = NULL
   for (i in 1:maxiter) {
     WS = updateWS(GK, Phi, eta, M, p, WS)
 
