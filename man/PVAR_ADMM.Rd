@@ -26,7 +26,7 @@ PVAR_ADMM(
   perupdate = 1,
   kappa = NULL,
   normalize = T,
-  adap_rho = F
+  adap_rho = NULL
 )
 }
 \arguments{
@@ -72,7 +72,7 @@ PVAR_ADMM(
 
 \item{normalize}{Logical, whether the time series data should be normalized. Default is True.}
 
-\item{adap_rho}{Logical, whether the step size coefficient \code{rho} should be adaptively updated.}
+\item{adap_rho}{If not \code{NULL}, the step size \code{rho} will be exponentially increasing to \code{rho * adap_rho} after \code{maxiter} iterations.}
 }
 \value{
 A named list of estimators and some metrics:\itemize{

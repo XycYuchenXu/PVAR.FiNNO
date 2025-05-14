@@ -32,7 +32,7 @@
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
 #' @param normalize Logical, whether the time series data should be normalized. Default is True.
-#' @param adap_rho Logical, whether the step size coefficient \code{rho} should be adaptively updated.
+#' @param adap_rho If not \code{NULL}, the step size \code{rho} will be exponentially increasing to \code{rho * adap_rho} after \code{maxiter} iterations.
 #'
 #' @return A named list of estimators and some metrics:\itemize{
 #' \item \code{Phi}: the \code{p} x \code{p} estimator of \eqn{\Phi} in the objective function above, not necessarily low-rank.
@@ -59,12 +59,12 @@
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL, WS = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T, adap_rho = F){
+                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T, adap_rho = NULL){
   tm = proc.time()[3]
   status = 0
   
-  if (adap_rho) {
-    const_cnt = 0
+  if (!is.null(adap_rho)) {
+    rho_factor = exp(log(adap_rho) / maxiter)
   }
   
   if (normalize) {
@@ -100,22 +100,9 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
     rele = cbind(rele, dist_Phi * c(rho, 1))
     
-    if (adap_rho) {
-      if (const_cnt <= 50000) {
-        if (const_cnt >= 50 && dist_Phi[1] * rho > 100 * dist_Phi[2]) {
-          rho = rho / 2
-          kappa = kappa * 2
-          const_cnt = 0
-        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 10) {
-          rho = rho * 2
-          kappa = kappa / 2
-          const_cnt = 0
-        } else {
-          const_cnt = const_cnt + 1
-        }
-      } else {
-        adap_rho = F
-      }
+    if (!is.null(adap_rho)) {
+      rho = rho * rho_factor
+      kappa = kappa / rho_factor
     }
 
     if (!is.null(pb)) {
