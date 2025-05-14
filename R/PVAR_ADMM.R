@@ -103,12 +103,12 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     if (adap_rho) {
       if (const_cnt <= 500) {
         if (const_cnt >= 50 && dist_Phi[1] * rho > 100 * dist_Phi[2]) {
-          rho = rho / 2
-          kappa = kappa * 2
-          const_cnt = 0
-        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 100) {
           rho = rho * 2
           kappa = kappa / 2
+          const_cnt = 0
+        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 100) {
+          rho = rho / 2
+          kappa = kappa * 2
           const_cnt = 0
         } else {
           const_cnt = const_cnt + 1
