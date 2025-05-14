@@ -2,16 +2,17 @@
 objfun = function(GK, XTS, eta, Phi_BL, Phi, W, S, Gamma, rho, M = nrow(W),
                   p = nrow(Phi), TT = sapply(XTS, ncol) - 1){
   dPhi = Phi - Phi_BL
-  s = rho * (.5 * sum(dPhi^2) + sum(dPhi * Gamma))
+  s0 = 0
+  s1 = rho * (.5 * sum(dPhi^2) + sum(dPhi * Gamma))
   
   for (m in 1:M) {
     Gm = GK[[1]][m,,]; Km = GK[[2]][m,,]
     
     Am = W[m,] * Phi + S[[m]]
-    s = s + .5 * sum(crossprod(Am) * Gm) + .5 * sum(XTS[[m]][,2:(TT[m]+1)]^2) / TT[m]-
+    s0 = s0 + .5 * sum(crossprod(Am) * Gm) + .5 * sum(XTS[[m]][,2:(TT[m]+1)]^2) / TT[m]-
       sum(t(Am) * Km) + eta * sum(abs(S[[m]]))
   }
-  return(s)
+  return(c(s0, s1 + s0))
   
 }
 

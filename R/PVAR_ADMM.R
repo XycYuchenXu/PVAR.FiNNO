@@ -18,7 +18,7 @@
 #' @param M The number of subjects in the panel.
 #' @param p The number of variables in the multivariate time series data.
 #' @param C The specified nuclear norm for the low-rank component.
-#' @param rho The step size coefficient in the ADMM setting.
+#' @param rho The step size coefficient in the ADMM setting. If is \code{NULL}, it will be adaptively selected in every iteration to balance the subproblem of \eqn{\Phi}.
 #' @param maxiter Maximum number of iterations.
 #' @param miniter Minimum number of iterations.
 #' @param err Tolerance error to determine convergence.
@@ -32,7 +32,6 @@
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
 #' @param normalize Logical, whether the time series data should be normalized. Default is True.
-#' @param adap_rho If not \code{NULL}, the step size \code{rho} will be exponentially increasing to \code{rho * adap_rho} after \code{maxiter} iterations.
 #'
 #' @return A named list of estimators and some metrics:\itemize{
 #' \item \code{Phi}: the \code{p} x \code{p} estimator of \eqn{\Phi} in the objective function above, not necessarily low-rank.
@@ -59,13 +58,11 @@
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL, WS = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T, adap_rho = NULL){
+                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
   tm = proc.time()[3]
   status = 0
   
-  if (!is.null(adap_rho)) {
-    rho_factor = exp(log(adap_rho) / maxiter)
-  }
+  rho_use = ifelse(is.null(rho), M, rho)
   
   if (normalize) {
     XTS = lapply(1:M, function(x) XTS[[x]] - rowMeans(XTS[[x]]))
@@ -73,9 +70,9 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   }
 
   if (is.null(Gamma)) Gamma = matrix(0, p, p)
-  if (is.null(kappa)) kappa = M/rho
+  if (is.null(kappa)) kappa = M/rho_use
 
-  traj = Inf; rele = c()
+  traj = c(Inf, Inf); rele = c()
 
   GK = compGK(XTS, M, p, TT)
   if (is.null(Phi)) {
@@ -92,29 +89,36 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     Phi_BL = updatePhi_BL(Phi + Gamma, Phi_BL, kappa, r, C, p)
 
     Phi0 = Phi
-    Phi = updatePhi(WS$W, WS$S, GK, rho, Phi_BL, Gamma, M, p)
-
+    Phi_rho = updatePhi(WS$W, WS$S, GK, rho, Phi_BL, Gamma, M, p)
+    Phi = Phi_rho$Phi
+    
+    if (is.null(rho)) {
+      rho_use = c(Phi_rho$rho, rho_use)
+      kappa = M / rho_use[1]
+    }
+    
     Gamma = Gamma + Phi - Phi_BL
-    traj = c(traj,
-             objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
+    traj = cbind(traj,
+                 objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho_use[1], M, p, TT))
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
     rele = cbind(rele, dist_Phi)
     
-    if (!is.null(adap_rho)) {
-      rho = rho * rho_factor
-      kappa = kappa / rho_factor
-    }
-
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('e:%.2f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', 10 * eta, i, traj[i+1], 10000 * rele[1,i], 10000 * rele[2,i], rho),
+        pb(sprintf('e:%.2f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f',
+                   10 * eta, i, ifelse(is.null(rho), traj[1,i+1], traj[2,i+1]),
+                   10000 * rele[1,i], 10000 * rele[2,i], rho_use[1]),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
       if (i %% bulk == 0) {
-        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * max(rele[,i])), appendLF = T)
+        message(sprintf('\r%d, %.4f, %.3f', i,
+                        ifelse(is.null(rho), traj[1,i+1], traj[2,i+1]),
+                        100 * max(rele[,i])), appendLF = T)
       } else if (i %% perupdate == 0) {
-        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * max(rele[,i])), appendLF = F)
+        message(sprintf('\r%d, %.4f, %.3f', i,
+                        ifelse(is.null(rho), traj[1,i+1], traj[2,i+1]),
+                        100 * max(rele[,i])), appendLF = F)
       }
     }
     if (i >= miniter) {
@@ -129,10 +133,12 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! e:%.2f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', 10 * eta, i, traj[i+1], 10000 * rele[1,i], 10000 * rele[2,i], rho),
+    pb(sprintf('Done! e:%.2f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f',
+               10 * eta, i, ifelse(is.null(rho), traj[1,i+1], traj[2,i+1]),
+               10000 * rele[1,i], 10000 * rele[2,i], rho_use[1]),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
-              eta = eta, traj = traj[-1], rele = rele, C = C, rho = rho,
+              eta = eta, traj = traj[,-1], rele = rele, C = C, rho = rho_use,
               ics = ics, iters = i, status = status, time = tm))
 }

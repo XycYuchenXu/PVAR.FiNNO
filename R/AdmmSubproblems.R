@@ -99,6 +99,11 @@ refineWS = function(GK, Phi, S, M = dim(GK[[1]])[1], p = nrow(Phi)){
 #' @keywords internal
 updatePhi = function(W, S, GK, rho, Phi_BL, Gamma, M = nrow(W), p = ncol(W)){
   Phi = matrix(0, p, p)
+  
+  if (is.null(rho)) {
+    rho = max(sqrt(colSums(W^2 * sapply(GK[[1]], 1, function(x) mean(diag(x))))))
+  }
+  
   B = rho * (Phi_BL - Gamma)
   for (m in 1:M) {
     B = B + W[m,] * (t(GK[[2]][m,,]) - tcrossprod(S[[m]], GK[[1]][m,,]))
@@ -107,11 +112,11 @@ updatePhi = function(W, S, GK, rho, Phi_BL, Gamma, M = nrow(W), p = ncol(W)){
   for (i in 1:p) {
     A = rho * diag(p)
     for (m in 1:M) {
-      A = A + W[m,i]^2 * GK[[1]][m,,] 
+      A = A + W[m,i]^2 * GK[[1]][m,,]
     }
     Phi[i,] = crossprod(B[i,], MASS::ginv(A))
   }
-  return(Phi)
+  return(list(Phi = Phi, rho = rho))
 }
 
 #' @keywords internal

@@ -25,8 +25,7 @@ PVAR_ADMM(
   bulk = 1,
   perupdate = 1,
   kappa = NULL,
-  normalize = T,
-  adap_rho = NULL
+  normalize = T
 )
 }
 \arguments{
@@ -44,7 +43,7 @@ PVAR_ADMM(
 
 \item{C}{The specified nuclear norm for the low-rank component.}
 
-\item{rho}{The step size coefficient in the ADMM setting.}
+\item{rho}{The step size coefficient in the ADMM setting. If is \code{NULL}, it will be adaptively selected in every iteration to balance the subproblem of \eqn{\Phi}.}
 
 \item{maxiter}{Maximum number of iterations.}
 
@@ -71,8 +70,6 @@ PVAR_ADMM(
 \item{kappa}{The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.}
 
 \item{normalize}{Logical, whether the time series data should be normalized. Default is True.}
-
-\item{adap_rho}{If not \code{NULL}, the step size \code{rho} will be exponentially increasing to \code{rho * adap_rho} after \code{maxiter} iterations.}
 }
 \value{
 A named list of estimators and some metrics:\itemize{
