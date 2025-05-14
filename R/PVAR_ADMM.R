@@ -32,6 +32,7 @@
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
 #' @param normalize Logical, whether the time series data should be normalized. Default is True.
+#' @param adap_rho Logical, whether the step size coefficient \code{rho} should be adaptively updated.
 #'
 #' @return A named list of estimators and some metrics:\itemize{
 #' \item \code{Phi}: the \code{p} x \code{p} estimator of \eqn{\Phi} in the objective function above, not necessarily low-rank.
@@ -58,7 +59,7 @@
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL, WS = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
+                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T, adap_rho = F){
   tm = proc.time()[3]
   status = 0
   
@@ -92,7 +93,16 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     Gamma = Gamma + Phi - Phi_BL
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
-    rele = c(rele, distPhi(Phi0, Phi, Phi_BL, C))
+    dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
+    rele = c(rele, max(dist_Phi))
+    
+    if (adap_rho) {
+      if (dist_Phi[1] > 10 * dist_Phi[2]) {
+        rho = rho * 2
+      } else if (dist_Phi[1] < dist_Phi[2] / 10) {
+        rho = rho / 2
+      }
+    }
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){

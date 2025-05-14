@@ -41,5 +41,5 @@ distPhi = function(Phi0, Phi1, Phi_BL, C){
   dist_01 = sqrt(sum((signs_01 * Phi0 - Phi1)^2)) / C
   
   dist_BL = sqrt(sum((Phi1 - Phi_BL)^2)) / C
-  return(max(dist_01, dist_BL))
+  return(c(dist_01, dist_BL))
 }

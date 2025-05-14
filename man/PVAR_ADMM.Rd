@@ -25,7 +25,8 @@ PVAR_ADMM(
   bulk = 1,
   perupdate = 1,
   kappa = NULL,
-  normalize = T
+  normalize = T,
+  adap_rho = F
 )
 }
 \arguments{
@@ -70,6 +71,8 @@ PVAR_ADMM(
 \item{kappa}{The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.}
 
 \item{normalize}{Logical, whether the time series data should be normalized. Default is True.}
+
+\item{adap_rho}{Logical, whether the step size coefficient \code{rho} should be adaptively updated.}
 }
 \value{
 A named list of estimators and some metrics:\itemize{
