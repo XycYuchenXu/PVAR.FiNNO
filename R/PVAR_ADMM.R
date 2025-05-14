@@ -98,7 +98,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
-    rele = cbind(rele, dist_Phi * c(rho, 1))
+    rele = cbind(rele, dist_Phi)
     
     if (!is.null(adap_rho)) {
       rho = rho * rho_factor
@@ -107,14 +107,14 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
+        pb(sprintf('e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 10000 * rele[1,i], 10000 * rele[2,i], rho),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
       if (i %% bulk == 0) {
-        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * rele[i]), appendLF = T)
+        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * max(rele[,i])), appendLF = T)
       } else if (i %% perupdate == 0) {
-        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * rele[i]), appendLF = F)
+        message(sprintf('\r%d, %.4f, %.3f', i, traj[i+1], 100 * max(rele[,i])), appendLF = F)
       }
     }
     if (i >= miniter) {
@@ -129,7 +129,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
+    pb(sprintf('Done! e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 10000 * rele[1,i], 10000 * rele[2,i], rho),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
