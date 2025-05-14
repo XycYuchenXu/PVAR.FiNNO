@@ -102,11 +102,11 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     
     if (adap_rho) {
       if (const_cnt <= 50000) {
-        if (const_cnt >= 50 && dist_Phi[1] * rho > 50 * dist_Phi[2]) {
+        if (const_cnt >= 50 && dist_Phi[1] * rho > 100 * dist_Phi[2]) {
           rho = rho / 2
           kappa = kappa * 2
           const_cnt = 0
-        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 50) {
+        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 10) {
           rho = rho * 2
           kappa = kappa / 2
           const_cnt = 0
@@ -120,7 +120,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('e:%.3f, i:%d, G:%.4f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
+        pb(sprintf('e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
@@ -142,7 +142,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! e:%.3f, i:%d, G:%.4f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
+    pb(sprintf('Done! e:%.3f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
