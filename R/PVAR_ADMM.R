@@ -63,6 +63,10 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   tm = proc.time()[3]
   status = 0
   
+  if (adap_rho) {
+    const_cnt = 0
+  }
+  
   if (normalize) {
     XTS = lapply(1:M, function(x) XTS[[x]] - rowMeans(XTS[[x]]))
     XTS = lapply(1:M, function(x) XTS[[x]] / sqrt(mean(XTS[[x]]^2)))
@@ -94,13 +98,19 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
-    rele = c(rele, max(dist_Phi))
+    rele = c(rele, max(dist_Phi * c(rho, 1)))
     
     if (adap_rho) {
-      if (dist_Phi[1] * rho > 10 * dist_Phi[2]) {
-        rho = rho / 2
-      } else if (dist_Phi[1] * rho < dist_Phi[2] / 10) {
-        rho = rho * 2
+      if (const_cnt <= 1000) {
+        if (const_cnt >= 10 && dist_Phi[1] * rho > 10 * dist_Phi[2]) {
+          rho = rho / 2
+          const_cnt = 0
+        } else if (const_cnt >= 10 && dist_Phi[1] * rho < dist_Phi[2] / 10) {
+          rho = rho * 2
+          const_cnt = 0
+        } else {
+          const_cnt = const_cnt + 1
+        }
       }
     }
 
