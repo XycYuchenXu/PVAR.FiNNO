@@ -98,17 +98,17 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
-    rele = c(rele, max(dist_Phi * c(rho, 1)))
+    rele = c(rele, max(dist_Phi))
     
     if (adap_rho) {
       if (const_cnt <= 500) {
         if (const_cnt >= 50 && dist_Phi[1] > 10 * dist_Phi[2]) {
-          rho = rho * 2
-          kappa = kappa / 2
-          const_cnt = 0
-        } else if (const_cnt >= 50 && dist_Phi[1] < dist_Phi[2] / 10) {
           rho = rho / 2
           kappa = kappa * 2
+          const_cnt = 0
+        } else if (const_cnt >= 50 && dist_Phi[1] < dist_Phi[2] / 10) {
+          rho = rho * 2
+          kappa = kappa / 2
           const_cnt = 0
         } else {
           const_cnt = const_cnt + 1
