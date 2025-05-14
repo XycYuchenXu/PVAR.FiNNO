@@ -98,15 +98,15 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     traj = c(traj,
              objfun(GK, XTS, eta, Phi_BL, Phi, WS$W, WS$S, Gamma, rho, M, p, TT))
     dist_Phi = distPhi(Phi0, Phi, Phi_BL, C)
-    rele = c(rele, max(dist_Phi))
+    rele = cbind(rele, dist_Phi * c(rho, 1))
     
     if (adap_rho) {
-      if (const_cnt <= 5000) {
-        if (const_cnt >= 50 && dist_Phi[1] > 100 * dist_Phi[2]) {
+      if (const_cnt <= 50000) {
+        if (const_cnt >= 50 && dist_Phi[1] * rho > 50 * dist_Phi[2]) {
           rho = rho / 2
           kappa = kappa * 2
           const_cnt = 0
-        } else if (const_cnt >= 50 && dist_Phi[1] < dist_Phi[2] / 100) {
+        } else if (const_cnt >= 50 && dist_Phi[1] * rho < dist_Phi[2] / 50) {
           rho = rho * 2
           kappa = kappa / 2
           const_cnt = 0
@@ -120,7 +120,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
 
     if (!is.null(pb)) {
       if (i %% perupdate == 0){
-        pb(sprintf('e:%.3f, i:%d, G:%.4f, E:%.3f, R:%.1f', eta, i, traj[i+1], 10000 * rele[i], rho),
+        pb(sprintf('e:%.3f, i:%d, G:%.4f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
            class = if (i %% bulk == 0) "sticky")
       }
     } else if (verbose) {
@@ -131,7 +131,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
       }
     }
     if (i >= miniter) {
-      cond1 = (abs(rele[i]) < err) && (abs(rele[i-1]) < err)
+      cond1 = (max(rele[,i]) < err) && (max(rele[,i-1]) < err)
       # cond2 = (abs(traj[i+1] - traj[i]) < err) && (abs(traj[i] - traj[i-1]) < err)
       if (cond1) {status = 1; break}
     }
@@ -142,7 +142,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
-    pb(sprintf('Done! e:%.3f i:%d, G:%.4f, E:%.3f, R:%.1f', eta, i, traj[i+1], 10000 * rele[i], rho),
+    pb(sprintf('Done! e:%.3f, i:%d, G:%.4f, DE:%.3f, PE:%.3f, R:%.1f', eta, i, traj[i+1], 100 * rele[1,i], 100 * rele[2,i], rho),
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
