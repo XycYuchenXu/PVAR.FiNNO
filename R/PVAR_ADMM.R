@@ -101,7 +101,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     rele = c(rele, max(dist_Phi))
     
     if (adap_rho) {
-      if (const_cnt <= 2000) {
+      if (const_cnt <= 5000) {
         if (const_cnt >= 50 && dist_Phi[1] > 10 * dist_Phi[2]) {
           rho = rho / 2
           kappa = kappa * 2
