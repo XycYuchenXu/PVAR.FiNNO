@@ -145,7 +145,7 @@ P_B = function(Phi){
 
 #' @keywords internal
 updatePhi_BL = function(Phi_n_Gamma, Phi_BL, rho_p, r, C, p = nrow(Phi_n_Gamma),
-                        err=1e-4, maxiter=30){
+                        err=1e-4, maxiter=100){
   Phi_0 = (Phi_n_Gamma + rho_p * Phi_BL) / (1 + rho_p)
   Phi_L = Phi_BL; Phi_B = Phi_BL; Gamma_BL = matrix(0, p, p)
   obj_old = sum((Phi_L - Phi_0)^2); diff_L_old = Inf
