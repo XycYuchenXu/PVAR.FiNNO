@@ -97,9 +97,9 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
     rele = c(rele, max(dist_Phi))
     
     if (adap_rho) {
-      if (dist_Phi[1] > 10 * dist_Phi[2]) {
+      if (dist_Phi[1] * rho > 10 * dist_Phi[2]) {
         rho = rho / 2
-      } else if (dist_Phi[1] < dist_Phi[2] / 10) {
+      } else if (dist_Phi[1] * rho < dist_Phi[2] / 10) {
         rho = rho * 2
       }
     }
