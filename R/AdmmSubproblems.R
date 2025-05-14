@@ -101,7 +101,7 @@ updatePhi = function(W, S, GK, rho, Phi_BL, Gamma, M = nrow(W), p = ncol(W)){
   Phi = matrix(0, p, p)
   
   if (is.null(rho)) {
-    rho = max(sqrt(colSums(W^2 * sapply(GK[[1]], 1, function(x) mean(diag(x))))))
+    rho = max(sqrt(colSums(W^2 * apply(GK[[1]], 1, function(x) mean(diag(x))))))
   }
   
   B = rho * (Phi_BL - Gamma)
