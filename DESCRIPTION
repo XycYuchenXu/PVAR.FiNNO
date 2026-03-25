@@ -12,6 +12,6 @@ Depends: R (>= 4.0.0), Rdpack
 Imports: MASS, stats, Matrix, foreach, doFuture, future, progressr, irlba, Rcpp
 LinkingTo: Rcpp
 RdMacros: Rdpack
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests: knitr, rmarkdown, devtools
 VignetteBuilder: knitr
