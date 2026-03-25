@@ -52,7 +52,7 @@ updateWS = function(GK, Phi, eta, M = dim(GK[[1]])[1], p = nrow(Phi), WS = NULL)
     W = WS$W; S = WS$S
   }
   for (m in 1:M) {
-    wsm = updateWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, W[m,], S[[m]], eta, p)
+    wsm = updateWSm(GK[[1]][m,,], GK[[2]][m,,], Phi, W[m,], S[[m]], eta[m], p)
     W[m,] = wsm[,1]
     S[[m]] = wsm[,-1]
   }
