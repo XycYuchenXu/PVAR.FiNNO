@@ -18,10 +18,10 @@ objfun = function(GK, XTS, eta, Phi_BL, Phi, W, S, Gamma, rho, M = nrow(W),
 
 #' @keywords internal
 IC_PVAR = function(XTS, W, S, Phi, C = 1, TT = sapply(XTS, ncol) - 1,
-                   M = nrow(W), p = ncol(W)){
+                   M = nrow(W), p = ncol(W), dof_lr = T){
 
   r = which(cumsum(svd(Phi)$d) >= 0.95 * C)[1]#rankMatrix(Phi_L, method = 'qr', tol = 0.05)
-  rss = 0; dof = p * (M - 1) + (2 * p - r) * r
+  rss = 0; dof = ifelse(dof_lr, p * (M - 1) + (2 * p - r) * r, 0)
   for (m in 1:M) {
     ym = XTS[[m]][,2:(TT[m]+1)]
     xm = XTS[[m]][,1:TT[m]]
@@ -31,8 +31,8 @@ IC_PVAR = function(XTS, W, S, Phi, C = 1, TT = sapply(XTS, ncol) - 1,
     dof = dof + sum(S[[m]] != 0)
   }
   ics = c(rss, sum(TT) * p * log(rss / (sum(TT) * p)) + dof * c(2, log(sum(TT * p)), 2 * log(log(sum(TT * p)))))
-  ics = c(ics, ics[3] + sum(log((p * M + p^2 - p + M * p^2 - dof + 1:dof) / (1:dof))))
-  names(ics) = c('RSS', 'AIC', 'BIC', 'HQC', 'eBIC')
+  ics = c(ics, ics[3] + sum(log((p * M + p^2 - p + M * p^2 - dof + 1:dof) / (1:dof))), dof)
+  names(ics) = c('RSS', 'AIC', 'BIC', 'HQC', 'eBIC', 'dof')
   return(ics)
 }
 

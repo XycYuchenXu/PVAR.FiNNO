@@ -22,6 +22,7 @@ PVAR_ADMM(
   Phi = NULL,
   Gamma = NULL,
   WS = NULL,
+  dof_lr = T,
   bulk = 1,
   perupdate = 1,
   kappa = NULL,
@@ -63,6 +64,8 @@ PVAR_ADMM(
 
 \item{WS}{The list of initializers for the rescaling \code{W} (a matrix of size \code{M} x \code{p}) and the sparse components \code{S} (a length-\code{M} list of \code{p} x \code{p} matrices).}
 
+\item{dof_lr}{Logical, whether the degrees of freedom for the low-rank component should be counted in the evaluation of information criteria. Default is True.}
+
 \item{bulk}{If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.}
 
 \item{perupdate}{If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.}
@@ -82,7 +85,7 @@ A named list of estimators and some metrics:\itemize{
 \item \code{iters}: if \code{status == 1}, it is the number of iterations until reaching convergence; otherwise \code{maxiter} (when \code{status == 0}).
 \item \code{traj}: a vector of length \code{iters}, the trajectory of the evaluation of the objective function along the sequence of estimators.
 \item \code{rele}: a vector of length \code{iters}, the trajectory of the relative errors of the estimator \eqn{\Phi} between consecutive iterations.
-\item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC evaluation at the final output estimators.
+\item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC/dof evaluation at the final output estimators.
 \item \code{time}: computation time for the whole estimation process.
 \item \code{eta, C, rho}: the same as the input, for bookkeeping purpose.
 }

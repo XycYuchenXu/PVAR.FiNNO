@@ -28,6 +28,7 @@
 #' @param Phi The initializer for \eqn{\Phi}.
 #' @param Gamma The initializer for the dual variable (Lagrange multiplier) \eqn{\Gamma}.
 #' @param WS The list of initializers for the rescaling \code{W} (a matrix of size \code{M} x \code{p}) and the sparse components \code{S} (a length-\code{M} list of \code{p} x \code{p} matrices).
+#' @param dof_lr Logical, whether the degrees of freedom for the low-rank component should be counted in the evaluation of information criteria. Default is True.
 #' @param bulk If \code{verbose = TRUE}, the number of iterations between permanent progress tracking messages.
 #' @param perupdate If \code{verbose = TRUE}, the number of iterations between live updates about progress tracking.
 #' @param kappa The proximal step size coefficient for the subproblem of \eqn{\Phi_c}, i.e., \code{Phi_BL}.
@@ -43,7 +44,7 @@
 #' \item \code{iters}: if \code{status == 1}, it is the number of iterations until reaching convergence; otherwise \code{maxiter} (when \code{status == 0}).
 #' \item \code{traj}: a vector of length \code{iters}, the trajectory of the evaluation of the objective function along the sequence of estimators.
 #' \item \code{rele}: a vector of length \code{iters}, the trajectory of the relative errors of the estimator \eqn{\Phi} between consecutive iterations.
-#' \item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC evaluation at the final output estimators.
+#' \item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC/dof evaluation at the final output estimators.
 #' \item \code{time}: computation time for the whole estimation process.
 #' \item \code{eta, C, rho}: the same as the input, for bookkeeping purpose.
 #' }
@@ -58,7 +59,7 @@
 PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p = nrow(XTS[[1]]),
                      C = sqrt(p * r), rho = M / 10, maxiter = 1e4, miniter = 200, err = 1e-5,
                      pb = NULL, verbose = FALSE, Phi_BL = NULL, Phi = NULL, Gamma = NULL, WS = NULL,
-                     bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
+                     dof_lr = T, bulk = 1, perupdate = 1, kappa = NULL, normalize = T){
   tm = proc.time()[3]
   status = 0
   
@@ -132,7 +133,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   # W = WS$W
   # S = refineS(GK, WS$S, W, Phi, M, p)
   WS = refineWS(GK, Phi, WS$S, M, p)
-  ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p)
+  ics = IC_PVAR(XTS, WS$W, WS$S, Phi, C, TT, M, p, dof_lr)
   tm = as.numeric(proc.time()[3] - tm)
   if (!is.null(pb)) {
     pb(sprintf('Done! e:%.2f, i:%d, G:%.2f, DE:%.3f, PE:%.3f, R:%.1f',
