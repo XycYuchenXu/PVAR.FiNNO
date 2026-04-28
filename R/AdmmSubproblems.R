@@ -148,12 +148,15 @@ updatePhi_BL = function(Phi_n_Gamma, Phi_BL, rho_p, r, C, p = nrow(Phi_n_Gamma),
                         err=1e-4, maxiter=100){
   Phi_0 = (Phi_n_Gamma + rho_p * Phi_BL) / (1 + rho_p)
   Phi_L = Phi_BL; Phi_B = Phi_BL; Gamma_BL = matrix(0, p, p)
-  obj_old = sum((Phi_L - Phi_0)^2); diff_L_old = Inf
+  obj_old = max(sum((Phi_L - Phi_0)^2), sum((Phi_B - Phi_0)^2))
+  diff_L_old = Inf
   for (i in 1:maxiter) {
     temp = P_L((Phi_0 + Phi_B + Gamma_BL)/2, r, C)
     diff_L_new = sum((temp - Phi_L)^2)
     Phi_L = temp
-    Phi_B = P_B(Phi_L - Gamma_BL)
+    temp = P_B(Phi_L - Gamma_BL)
+    diff_L_new = max(diff_L_new, sum((temp - Phi_B)^2))
+    Phi_B = temp
     Gamma_BL = Gamma_BL + Phi_B - Phi_L
     obj_new = sum((Phi_L - Phi_0)^2)
     if (abs(diff_L_new - diff_L_old) < err || abs(obj_new - obj_old) < err) {
