@@ -44,6 +44,7 @@
 #' \item \code{iters}: if \code{status == 1}, it is the number of iterations until reaching convergence; otherwise \code{maxiter} (when \code{status == 0}).
 #' \item \code{traj}: a vector of length \code{iters}, the trajectory of the evaluation of the objective function along the sequence of estimators.
 #' \item \code{rele}: a vector of length \code{iters}, the trajectory of the relative errors of the estimator \eqn{\Phi} between consecutive iterations.
+#' \item \code{inner_iters}: a vector of length \code{iters}, the number of the inner iterations of estimating \eqn{\Phi_c}.
 #' \item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC/dof evaluation at the final output estimators.
 #' \item \code{time}: computation time for the whole estimation process.
 #' \item \code{eta, C, rho}: the same as the input, for bookkeeping purpose.
@@ -73,7 +74,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   if (is.null(Gamma)) Gamma = matrix(0, p, p)
   if (is.null(kappa)) kappa = M/rho_use
 
-  traj = c(Inf, Inf); rele = c()
+  traj = c(Inf, Inf); rele = c(); inner_iters = c()
 
   GK = compGK(XTS, M, p, TT)
   if (is.null(Phi)) {
@@ -81,7 +82,7 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   }
 
   if (is.null(Phi_BL)) {
-    Phi_BL = updatePhi_BL(Phi + Gamma, Phi, kappa, r, C, p)
+    Phi_BL = updatePhi_BL(Phi + Gamma, Phi, kappa, r, C, p)$Phi_L
   }
   
   if (length(eta) != M) {eta = rep(eta[1], M)}
@@ -89,7 +90,9 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
   for (i in 1:maxiter) {
     WS = updateWS(GK, Phi, eta, M, p, WS)
 
-    Phi_BL = updatePhi_BL(Phi + Gamma, Phi_BL, kappa, r, C, p)
+    Phi_BL_res = updatePhi_BL(Phi + Gamma, Phi_BL, kappa, r, C, p)
+    Phi_BL = Phi_BL_res$Phi_L
+    inner_iters = c(inner_iters, Phi_BL_res$iters)
 
     Phi0 = Phi
     Phi_rho = updatePhi(WS$W, WS$S, GK, rho, Phi_BL, Gamma, M, p)
@@ -142,6 +145,6 @@ PVAR_ADMM = function(XTS, r, eta, TT = sapply(XTS, ncol) - 1, M = length(XTS), p
        amount = maxiter %/% perupdate - i %/% perupdate, class = 'sticky')
   }
   return(list(Phi = Phi, W = WS$W, S = WS$S, Phi_BL = Phi_BL, Gamma = Gamma,
-              eta = eta, traj = traj[,-1], rele = rele, C = C, rho = rho_use,
-              ics = ics, iters = i, status = status, time = tm))
+              eta = eta, traj = traj[,-1], rele = rele, inner_iters = inner_iters,
+              C = C, rho = rho_use, ics = ics, iters = i, status = status, time = tm))
 }

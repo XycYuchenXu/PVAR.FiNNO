@@ -85,6 +85,7 @@ A named list of estimators and some metrics:\itemize{
 \item \code{iters}: if \code{status == 1}, it is the number of iterations until reaching convergence; otherwise \code{maxiter} (when \code{status == 0}).
 \item \code{traj}: a vector of length \code{iters}, the trajectory of the evaluation of the objective function along the sequence of estimators.
 \item \code{rele}: a vector of length \code{iters}, the trajectory of the relative errors of the estimator \eqn{\Phi} between consecutive iterations.
+\item \code{inner_iters}: a vector of length \code{iters}, the number of the inner iterations of estimating \eqn{\Phi_c}.
 \item \code{ics}: the vector of RSS/AIC/BIC/HQC/eBIC/dof evaluation at the final output estimators.
 \item \code{time}: computation time for the whole estimation process.
 \item \code{eta, C, rho}: the same as the input, for bookkeeping purpose.

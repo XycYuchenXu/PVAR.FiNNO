@@ -164,5 +164,5 @@ updatePhi_BL = function(Phi_n_Gamma, Phi_BL, rho_p, r, C, p = nrow(Phi_n_Gamma),
     }
     obj_old = obj_new; diff_L_old = diff_L_new
   }
-  return(Phi_L)
+  return(list(Phi_L = Phi_L, iters = i))
 }
